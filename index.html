@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecondWorld</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="style.css">
+    <style>
+			#blocker {
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				background-color: rgba(68, 68, 68, 0.5);
+			}
+
+			#instructions {
+				width: 100%;
+				height: 100%;
+
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+
+				text-align: center;
+				font-size: 14px;
+				cursor: pointer;
+			}
+		</style>
+  </head>
+  <body>
+    <div id="blocker">
+			<div id="instructions">
+				<p style="font-size:36px">Click to play</p>
+				<p>
+					Move: WASD<br/>
+					Look: MOUSE<br/>
+          			Menu: ESC
+				</p>
+			</div>
+		</div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
