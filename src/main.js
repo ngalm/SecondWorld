@@ -37,14 +37,13 @@ controls.addEventListener( 'unlock', function () {
 } );
 
 const keys = {}
-document.addEventListener('keydown', e => keys[e.code] = true);     // if a key is pressed it's flagged 'true' in keys object
-document.addEventListener('keyup', e => keys[e.code] = false);      // 
+document.addEventListener('keydown', event => keys[event.code] = true);     // if a key is pressed it's flagged 'true' in keys object
+document.addEventListener('keyup', event => keys[event.code] = false);      // 
 
 // SKY
 let sky = new Sky();
 sky.scale.setScalar( 450000 );
 scene.add( sky );
-console.log(sky.material.uniforms);
 
 let sun = new THREE.Vector3();
 let elevation = 3;
@@ -76,13 +75,32 @@ let water = new Water(
     fog: scene.fog !== undefined
   }
 );
-
 water.rotation.x = - Math.PI / 2;
-
 scene.add( water );
+
+// MUSIC
+const listener = new THREE.AudioListener();           // create an AudioListener and add it to the camera
+camera.add( listener );                         
+const sound = new THREE.Audio( listener );            // create a global audio source
+const audioLoader = new THREE.AudioLoader();          // load a sound and set it as the Audio object's buffer
+audioLoader.load( 'sounds/2 10 26.wav', function( buffer ) {
+	sound.setBuffer( buffer );
+	sound.setLoop( true );
+	sound.setVolume( 0.5 );
+});
 
 // animate scene
 function animate() {
+  // play or pause music
+  // TODO: improve glitchy play pause
+  if (keys['KeyP']) {
+    if (sound.isPlaying) {
+      sound.pause();
+    }
+    else { 
+      sound.play();
+    }
+  }
   // move camera along xz-axis if controls are locked and a WASD key is pressed
   if (controls.isLocked) {
     if (keys['KeyW']) controls.moveForward(.1);
