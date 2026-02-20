@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import { Water } from 'three/addons/objects/Water.js';
+import { Sky } from 'three/addons/objects/Sky.js';
 
 // set up loader, scene, camera, and renderer
 const scene = new THREE.Scene();
@@ -8,6 +9,11 @@ const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.inner
 camera.position.set(2, 4, 10);    // pov: straight on like person walking on path
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
+// render settings for sun in sky
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.5;
+
 document.body.appendChild( renderer.domElement );
 
 // Pointer Lock camera control
@@ -34,7 +40,23 @@ const keys = {}
 document.addEventListener('keydown', e => keys[e.code] = true);     // if a key is pressed it's flagged 'true' in keys object
 document.addEventListener('keyup', e => keys[e.code] = false);      // 
 
-// IMP WATER
+// SKY
+let sky = new Sky();
+sky.scale.setScalar( 450000 );
+scene.add( sky );
+console.log(sky.material.uniforms);
+
+let sun = new THREE.Vector3();
+let elevation = 3;
+let azimuth = 180;
+const phi = THREE.MathUtils.degToRad( 90 - elevation);
+const theta = THREE.MathUtils.degToRad(azimuth );
+
+sun.setFromSphericalCoords( 1, phi, theta );
+
+sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+
+// WATER
 const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
 
 let water = new Water(
