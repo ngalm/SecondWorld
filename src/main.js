@@ -79,14 +79,15 @@ water.rotation.x = - Math.PI / 2;
 scene.add( water );
 
 // MUSIC
+let songPath = 'sounds/2_10_26.wav'
 const listener = new THREE.AudioListener();           // create an AudioListener and add it to the camera
 camera.add( listener );                         
 const sound = new THREE.Audio( listener );            // create a global audio source
 const audioLoader = new THREE.AudioLoader();          // load a sound and set it as the Audio object's buffer
-audioLoader.load( 'sounds/2 10 26.wav', function( buffer ) {
-	sound.setBuffer( buffer );
-	sound.setLoop( true );
-	sound.setVolume( 0.5 );
+audioLoader.load( songPath, function( buffer ) {
+	sound.setBuffer(buffer);
+	sound.setLoop(true);
+	sound.setVolume(0.4);
 });
 
 // animate scene
