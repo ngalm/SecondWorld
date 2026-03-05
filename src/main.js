@@ -36,7 +36,7 @@ audioLoader.load( soundPath, function( buffer ) {
 
 instructions.addEventListener( 'click', function () {
   controls.lock();                      // when user clicks inside 'instructions' html element, pointer is locked (camera controls are active)
-  sound.play();                         // play sound once user interacts by clicking
+  if (!(sound.isPlaying)) sound.play();                         // play sound once user interacts by clicking
 } );
 
 controls.addEventListener( 'lock', function () {
