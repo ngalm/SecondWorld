@@ -22,8 +22,21 @@ const controls = new PointerLockControls( camera, document.body );
 const blocker = document.getElementById( 'blocker' );
 const instructions = document.getElementById( 'instructions' );
 
+// START
+const soundPath = 'sounds/ambient_ocean.mp3';
+const listener = new THREE.AudioListener();           // create an AudioListener and add it to the camera
+camera.add( listener );                         
+const sound = new THREE.Audio( listener );            // create a global audio source
+const audioLoader = new THREE.AudioLoader();          // load a sound and set it as the Audio object's buffer
+audioLoader.load( soundPath, function( buffer ) {
+	sound.setBuffer(buffer);
+	sound.setLoop(true);
+	sound.setVolume(0.1);
+});
+
 instructions.addEventListener( 'click', function () {
   controls.lock();                      // when user clicks inside 'instructions' html element, pointer is locked (camera controls are active)
+  sound.play();                         // play sound once user interacts by clicking
 } );
 
 controls.addEventListener( 'lock', function () {
@@ -78,30 +91,8 @@ let water = new Water(
 water.rotation.x = - Math.PI / 2;
 scene.add( water );
 
-// MUSIC
-let songPath = 'sounds/2_10_26.wav'
-const listener = new THREE.AudioListener();           // create an AudioListener and add it to the camera
-camera.add( listener );                         
-const sound = new THREE.Audio( listener );            // create a global audio source
-const audioLoader = new THREE.AudioLoader();          // load a sound and set it as the Audio object's buffer
-audioLoader.load( songPath, function( buffer ) {
-	sound.setBuffer(buffer);
-	sound.setLoop(true);
-	sound.setVolume(0.4);
-});
-
 // animate scene
 function animate() {
-  // play or pause music
-  // TODO: improve glitchy play pause
-  if (keys['KeyP']) {
-    if (sound.isPlaying) {
-      sound.pause();
-    }
-    else { 
-      sound.play();
-    }
-  }
   // move camera along xz-axis if controls are locked and a WASD key is pressed
   if (controls.isLocked) {
     if (keys['KeyW']) controls.moveForward(.1);
