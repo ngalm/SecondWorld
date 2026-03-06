@@ -10,7 +10,7 @@ const gltfLoader = new GLTFLoader();
 const textureLoader = new THREE.TextureLoader();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-camera.position.set(2, 4, 10);    // pov: straight on like person walking on path
+camera.position.set(2, 7, 15);    // pov: straight on like person walking on path
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 // render settings for sun in sky
@@ -57,10 +57,10 @@ document.addEventListener('keydown', event => keys[event.code] = true);     // i
 document.addEventListener('keyup', event => keys[event.code] = false);      // 
 
 // ISLAND 
-const islandTexturePath = 'assets/gravelly_sand.jpeg';
-const islandNormalsPath = 'assets/gravelly_sand_normals.jpeg';
+const islandTexturePath = 'assets/islandtexture.jpg';
+const islandNormalsPath = 'assets/islandnormals.jpg';
 const groundTexture = textureLoader.load(islandTexturePath);
-//groundTexture.colorSpace = THREE.SRGBColorSpace;
+//renderer.outputColorSpace = THREE.SRGBColorSpace;
 const normalMap = textureLoader.load(islandNormalsPath);
 const material = new THREE.MeshStandardMaterial({
     map: groundTexture,
@@ -68,10 +68,11 @@ const material = new THREE.MeshStandardMaterial({
     roughness: 0.8,
 });
 
-const islandPath = 'assets/island.glb';
+const islandPath = 'assets/large_island.glb';
 gltfLoader.load(islandPath, 
   (gltf) => {
     const model = gltf.scene;
+    model.scale.set(2, 1, 2); 
     // Traverse the model to find meshes
     model.traverse((child) => {
         if (child.isMesh) {
@@ -129,7 +130,7 @@ let water = new Water(
   }
 );
 water.rotation.x = - Math.PI / 2;
-water.position.y = 0.2;
+//water.position.y = 0.4;
 scene.add( water );
 
 // animate scene
