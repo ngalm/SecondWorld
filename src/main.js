@@ -57,22 +57,22 @@ document.addEventListener('keydown', event => keys[event.code] = true);     // i
 document.addEventListener('keyup', event => keys[event.code] = false);      // 
 
 // ISLAND 
-const islandTexturePath = 'assets/islandtexture.jpg';
-const islandNormalsPath = 'assets/islandnormals.jpg';
+const islandTexturePath = 'assets/sand.jpg';
+//const islandNormalsPath = 'assets/islandnormals.jpg';   // for now there is no normal map for the island material, looks better
 const groundTexture = textureLoader.load(islandTexturePath);
-//renderer.outputColorSpace = THREE.SRGBColorSpace;
-const normalMap = textureLoader.load(islandNormalsPath);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+//const normalMap = textureLoader.load(islandNormalsPath);
 const material = new THREE.MeshStandardMaterial({
     map: groundTexture,
-    normalMap: normalMap,
-    roughness: 0.8,
+    //normalMap: normalMap,
+    roughness: 0.7,
 });
 
 const islandPath = 'assets/large_island.glb';
 gltfLoader.load(islandPath, 
   (gltf) => {
     const model = gltf.scene;
-    model.scale.set(2, 1, 2); 
+    model.scale.set(6, 1, 5); 
     // Traverse the model to find meshes
     model.traverse((child) => {
         if (child.isMesh) {
@@ -130,7 +130,7 @@ let water = new Water(
   }
 );
 water.rotation.x = - Math.PI / 2;
-//water.position.y = 0.4;
+water.position.y = .2;
 scene.add( water );
 
 // animate scene
