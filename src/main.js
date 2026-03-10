@@ -4,7 +4,6 @@ import { Water } from 'three/addons/objects/Water.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-
 // set up loader, scene, camera, and renderer
 const gltfLoader = new GLTFLoader();
 const textureLoader = new THREE.TextureLoader();
@@ -26,7 +25,7 @@ const blocker = document.getElementById( 'blocker' );
 const instructions = document.getElementById( 'instructions' );
 
 // START
-const soundPath = 'sounds/ambient_ocean.mp3';
+const soundPath = './sounds/ambient_ocean.mp3';
 const listener = new THREE.AudioListener();           // create an AudioListener and add it to the camera
 camera.add( listener );                         
 const sound = new THREE.Audio( listener );            // create a global audio source
@@ -57,7 +56,7 @@ document.addEventListener('keydown', event => keys[event.code] = true);     // i
 document.addEventListener('keyup', event => keys[event.code] = false);      // 
 
 // ISLAND 
-const islandTexturePath = 'assets/sand.jpg';
+const islandTexturePath = './assets/sand.jpg';
 //const islandNormalsPath = 'assets/islandnormals.jpg';   // for now there is no normal map for the island material, looks better
 const groundTexture = textureLoader.load(islandTexturePath);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -68,7 +67,7 @@ const material = new THREE.MeshStandardMaterial({
     roughness: 0.7,
 });
 
-const islandPath = 'assets/large_island.glb';
+const islandPath = './assets/large_island.glb';
 gltfLoader.load(islandPath, 
   (gltf) => {
     const model = gltf.scene;
@@ -111,7 +110,7 @@ sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
 
 // WATER
 const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
-const waterNormalsPath =  'assets/waternormals.jpg';
+const waterNormalsPath =  './assets/waternormals.jpg';
 let water = new Water(
   waterGeometry,
   {
