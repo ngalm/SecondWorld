@@ -81,8 +81,11 @@ gltfLoader.load(islandPath,
             child.receiveShadow = true;
         }
     });
-
+    
     scene.add(model);
+
+    //Start render loop after model loads for smoother appearance when user visits site
+    renderer.setAnimationLoop( animate );
 });
 
 // LIGHT
@@ -116,7 +119,7 @@ let water = new Water(
   {
     textureWidth: 512,
     textureHeight: 512,
-    waterNormals: new THREE.TextureLoader().load( waterNormalsPath, function ( texture ) {
+    waterNormals: textureLoader.load( waterNormalsPath, function ( texture ) {
 
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
 
@@ -144,4 +147,3 @@ function animate() {
   water.material.uniforms[ 'time' ].value += 1.0 / 360.0;    // make water move
   renderer.render( scene, camera );
 }
-renderer.setAnimationLoop( animate );
