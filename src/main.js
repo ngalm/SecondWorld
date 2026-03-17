@@ -42,8 +42,7 @@ instructions.addEventListener( 'click', function () {
 } );
 
 controls.addEventListener( 'lock', function () {
-  instructions.style.display = 'none';   // don't display instructions menu or block overlay when pointer is locked (controls are active)
-  blocker.style.display = 'none';
+  blocker.style.display = 'none';       // don't display block overlay or instructions menu (since child node of blocker), when pointer is locked (controls are active)
 } );
 
 controls.addEventListener( 'unlock', function () {
@@ -71,7 +70,7 @@ const islandPath = './assets/large_island.glb';
 gltfLoader.load(islandPath, 
   (gltf) => {
     const model = gltf.scene;
-    model.scale.set(6, 1, 5); 
+    model.scale.set(1, 1, 1); 
     // Traverse the model to find meshes
     model.traverse((child) => {
         if (child.isMesh) {
@@ -132,7 +131,7 @@ let water = new Water(
   }
 );
 water.rotation.x = - Math.PI / 2;
-water.position.y = .2;
+//water.position.y = 0; // raise or lower to improve glitching at border of island
 scene.add( water );
 
 // animate scene
