@@ -4,27 +4,21 @@ import { Water } from 'three/addons/objects/Water.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-// set up loader, scene, camera, and renderer
+// THREE SETUP: loader, scene, camera, and renderer
 const gltfLoader = new GLTFLoader();
 const textureLoader = new THREE.TextureLoader();
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-camera.position.set(2, 7, 15);    // pov: straight on like person walking on path
+camera.position.set(2, 7, 15);      // pov: straight on like person walking on path
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
-// render settings for sun in sky
+// render settings for sun in SKY
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.5;
-document.body.appendChild( renderer.domElement );
+document.body.appendChild( renderer.domElement );   // append canvas to DOM for renderer to draw to
 
-// Pointer Lock camera control
-const controls = new PointerLockControls( camera, document.body );
-
-const blocker = document.getElementById( 'blocker' );
-const instructions = document.getElementById( 'instructions' );
-
-// START
+// SOUND
 const soundPath = './sounds/ambient_ocean.mp3';
 const listener = new THREE.AudioListener();           // create an AudioListener and add it to the camera
 camera.add( listener );                         
@@ -36,6 +30,16 @@ audioLoader.load( soundPath, function( buffer ) {
 	sound.setVolume(0.1);
 });
 
+// CONTROLS
+// Pointer Lock Camera Controls
+const controls = new PointerLockControls( camera, document.body );
+const keys = {}
+document.addEventListener('keydown', event => keys[event.code] = true);     // if a key is pressed it's flagged 'true' in keys object
+document.addEventListener('keyup', event => keys[event.code] = false);      // if a key is not pressed it's flagged 'false' in keys object 
+
+const blocker = document.getElementById( 'blocker' );
+const instructions = document.getElementById( 'instructions' );
+
 instructions.addEventListener( 'click', function () {
   controls.lock();                      // when user clicks inside 'instructions' html element, pointer is locked (camera controls are active)
   if (!(sound.isPlaying)) sound.play(); // play sound once user interacts by clicking
@@ -46,26 +50,21 @@ controls.addEventListener( 'lock', function () {
 } );
 
 controls.addEventListener( 'unlock', function () {
-  blocker.style.display = 'block';       // display instructions menu and block overlay when pointer is unlocked (controls deactivated)
+  blocker.style.display = 'block';       // display instructions menu and blocker overlay when pointer is unlocked (controls deactivated)
   instructions.style.display = '';
 } );
-
-const keys = {}
-document.addEventListener('keydown', event => keys[event.code] = true);     // if a key is pressed it's flagged 'true' in keys object
-document.addEventListener('keyup', event => keys[event.code] = false);      // 
 
 // ISLAND 
 const islandTexturePath = './assets/sand.jpg';
 //const islandNormalsPath = 'assets/islandnormals.jpg';   // for now there is no normal map for the island material, looks better
 const groundTexture = textureLoader.load(islandTexturePath);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.outputColorSpace = THREE.SRGBColorSpace;         // idk what this does, doesn't appear to do anything to model's render
 //const normalMap = textureLoader.load(islandNormalsPath);
 const material = new THREE.MeshStandardMaterial({
     map: groundTexture,
     //normalMap: normalMap,
     roughness: 0.7,
 });
-
 const islandPath = './assets/large_island.glb';
 gltfLoader.load(islandPath, 
   (gltf) => {
@@ -80,9 +79,7 @@ gltfLoader.load(islandPath,
             child.receiveShadow = true;
         }
     });
-    
     scene.add(model);
-
     //Start render loop after model loads for smoother appearance when user visits site
     renderer.setAnimationLoop( animate );
 });
@@ -96,32 +93,29 @@ sunLight.position.set(50, 100, 50);
 scene.add(sunLight);
 
 // SKY
-let sky = new Sky();
+const sky = new Sky(); 
 sky.scale.setScalar( 450000 );
 scene.add( sky );
 
-let sun = new THREE.Vector3();
-let elevation = 3;
-let azimuth = 180;
+const sun = new THREE.Vector3();
+const elevation = 3;
+const azimuth = 180;
 const phi = THREE.MathUtils.degToRad( 90 - elevation);
 const theta = THREE.MathUtils.degToRad(azimuth );
 
 sun.setFromSphericalCoords( 1, phi, theta );
-
 sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
 
 // WATER
 const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
 const waterNormalsPath =  './assets/waternormals.jpg';
-let water = new Water(
+const water = new Water(
   waterGeometry,
   {
     textureWidth: 512,
     textureHeight: 512,
     waterNormals: textureLoader.load( waterNormalsPath, function ( texture ) {
-
       texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-
     } ),
     sunDirection: new THREE.Vector3(),
     sunColor: 0xffd8a8,
@@ -134,7 +128,7 @@ water.rotation.x = - Math.PI / 2;
 //water.position.y = 0; // raise or lower to improve glitching at border of island
 scene.add( water );
 
-// animate scene
+// ANIMATE
 function animate() {
   // move camera along xz-axis if controls are locked and a WASD key is pressed
   if (controls.isLocked) {
