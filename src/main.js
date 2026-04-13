@@ -178,18 +178,56 @@ async function init() {
     }
   );
   water.rotation.x = - Math.PI / 2;
-  //water.position.y = 0; // raise or lower to improve glitching at border of island
   scene.add( water );
+
+  // Player Body Rapier
+  // create kinematic position-based rigid-body
+  const playerRigidBodyType = RAPIER.RigidBodyDesc.kinematicPositionBased();
+  const playerRigidBody = world.createRigidBody(playerRigidBodyType.setTranslation(0, 5, 0));
+  // create capsule collider
+  const playerColliderDesc = RAPIER.ColliderDesc.capsule(0.5, 0.2);
+  const playerCollider = world.createCollider(playerColliderDesc, playerRigidBody);
+  
+  /***DEBUGGING***/
+  const capsuleGeometry = new THREE.CapsuleGeometry(0.5, 0.4, 8, 16);
+// radius = 0.5
+// height = 2 * halfHeight = 0.4
+const capsuleMaterial = new THREE.MeshBasicMaterial({
+  color: 0xff0000,
+  wireframe: true
+});
+const capsuleMesh = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
+scene.add(capsuleMesh);
+  /***DEBUGGING***/
+
+  // Kinematic Character Controller Rapier
+  // Create the controller.
+  const characterController = world.createCharacterController(0.01);
+  // set max/min slope angles for climbing/sliding ??
 
   // ANIMATE
   function animate() {
+    /***DEBUGGING***/
+    const pos = playerRigidBody.translation();
+    capsuleMesh.position.set(pos.x, pos.y, pos.z);
+    /***DEBUGGING***/
+    
+    // update physics world
+    world.step()
+
+    // create movement vector
+    const movementVector = new THREE.Vector3();
+
     // move camera along xz-axis if controls are locked and a WASD key is pressed
     if (controls.isLocked) {
-      if (keys['KeyW']) controls.moveForward(.1);
-      if (keys['KeyS']) controls.moveForward(-.1);
-      if (keys['KeyA']) controls.moveRight(-.1);
-      if (keys['KeyD']) controls.moveRight(.1);
+      if (keys['KeyW']) movementVector.z -= 1;
+      if (keys['KeyS']) movementVector.z +=1;
+      if (keys['KeyA']) movementVector.x -=1;
+      if (keys['KeyD']) movementVector.x +=1;
     }
+    if (movementVector.length() > 0) movementVector.normalize();  // normalize so diagonal isn't faster
+
+  
     water.material.uniforms[ 'time' ].value += 1.0 / 360.0;    // make water move
     renderer.render( scene, camera );
   }
