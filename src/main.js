@@ -22,8 +22,8 @@ async function init() {
 
   // RAPIER SETUP
   await RAPIER.init();  // asynchronously loaded
-  const gravity = { x: 0.0, y: -9.81, z: 0.0 };
-  const world = new RAPIER.World(gravity);
+
+  const world = new RAPIER.World({ x: 0.0, y: -9.81, z: 0.0 });
 
   // SOUND
   const soundPath = './sounds/ambient_ocean.mp3';
@@ -84,11 +84,6 @@ async function init() {
       // Traverse the model to find meshes
       model.traverse((child) => {
           if (child.isMesh) {
-            /***DEBUGGING***/
-            console.log("LOCAL scale:", child.scale);
-            console.log("WORLD scale:", child.getWorldScale(new THREE.Vector3()));
-            /***DEBUGGING***/
-
             child.material = material;
             // Optionally, ensure the mesh casts/receives shadows
             child.castShadow = true;
@@ -98,17 +93,6 @@ async function init() {
             child.updateWorldMatrix(true, false);
             const geometry = child.geometry.clone();
             geometry.applyMatrix4(child.matrixWorld);
-
-            /***DEBUGGING***/
-            const debugMesh = new THREE.Mesh(
-              geometry,
-              new THREE.MeshBasicMaterial({
-                wireframe: true,
-                color: 0xff0000
-              })
-            );
-            scene.add(debugMesh);
-            /***DEBUGGING***/
 
             const pos = geometry.attributes.position.array;
             const idx = geometry.index.array;
@@ -187,47 +171,55 @@ async function init() {
   // create capsule collider
   const playerColliderDesc = RAPIER.ColliderDesc.capsule(0.5, 0.2);
   const playerCollider = world.createCollider(playerColliderDesc, playerRigidBody);
-  
-  /***DEBUGGING***/
-  const capsuleGeometry = new THREE.CapsuleGeometry(0.5, 0.4, 8, 16);
-// radius = 0.5
-// height = 2 * halfHeight = 0.4
-const capsuleMaterial = new THREE.MeshBasicMaterial({
-  color: 0xff0000,
-  wireframe: true
-});
-const capsuleMesh = new THREE.Mesh(capsuleGeometry, capsuleMaterial);
-scene.add(capsuleMesh);
-  /***DEBUGGING***/
 
   // Kinematic Character Controller Rapier
-  // Create the controller.
   const characterController = world.createCharacterController(0.01);
-  // set max/min slope angles for climbing/sliding ??
 
+  let velocityY = 0;
+  const manualGravity = -9.81;
+  const timer = new THREE.Timer();
   // ANIMATE
   function animate() {
-    /***DEBUGGING***/
-    const pos = playerRigidBody.translation();
-    capsuleMesh.position.set(pos.x, pos.y, pos.z);
-    /***DEBUGGING***/
-    
     // update physics world
     world.step()
-
-    // create movement vector
-    const movementVector = new THREE.Vector3();
-
-    // move camera along xz-axis if controls are locked and a WASD key is pressed
+    // update timer (clock)
+    timer.update();
+    /**
+     * 1. Compute desired movement vector (based on input + camera)
+     * 2. Ask Rapier:
+     *      “How far can I move without colliding?”
+     * 3. Apply corrected movement
+    **/
+    const move = new THREE.Vector3();
+    const delta = timer.getDelta();
+    velocityY += manualGravity * delta;
+    const speed = 5; // units per second
+    move.multiplyScalar(speed * delta);
     if (controls.isLocked) {
-      if (keys['KeyW']) movementVector.z -= 1;
-      if (keys['KeyS']) movementVector.z +=1;
-      if (keys['KeyA']) movementVector.x -=1;
-      if (keys['KeyD']) movementVector.x +=1;
-    }
-    if (movementVector.length() > 0) movementVector.normalize();  // normalize so diagonal isn't faster
+      const speed = 0.1;
 
-  
+      const forward = new THREE.Vector3();
+      camera.getWorldDirection(forward);
+      forward.y = 0;
+      forward.normalize();
+
+      const right = new THREE.Vector3();
+      right.crossVectors(forward, camera.up).normalize();
+
+      if (keys['KeyW']) move.add(forward);
+      if (keys['KeyS']) move.sub(forward);
+      if (keys['KeyA']) move.add(right);
+      if (keys['KeyD']) move.sub(right);
+
+      move.normalize().multiplyScalar(speed);
+    }
+    const currentPos = playerRigidBody.translation();
+    characterController.computeColliderMovement(playerCollider, {x: move.x, y:  velocityY * delta, z: move.z});
+    const corrected = characterController.computedMovement();
+    const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
+    playerRigidBody.setNextKinematicTranslation(newPos);
+    camera.position.set(playerRigidBody.translation().x, playerRigidBody.translation().y, playerRigidBody.translation().z);
+
     water.material.uniforms[ 'time' ].value += 1.0 / 360.0;    // make water move
     renderer.render( scene, camera );
   }
