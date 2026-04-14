@@ -107,19 +107,19 @@ async function init() {
             indexOffset += pos.length / 3;
           }
       });
-      // ISLAND Rapier Object setup
+      
+      // ISLAND Rapier 
       // create fixed rigid body
       const islandRigidBodyType = RAPIER.RigidBodyDesc.fixed();
       const islandRigidBody = world.createRigidBody(islandRigidBodyType);
       // create trimesh collider
-      const islandColliderType = RAPIER.ColliderDesc.trimesh(new Float32Array(allVertices), new Uint32Array(allIndices));
-      world.createCollider(islandColliderType, islandRigidBody);
+      const islandColliderDesc = RAPIER.ColliderDesc.trimesh(new Float32Array(allVertices), new Uint32Array(allIndices));
+      world.createCollider(islandColliderDesc, islandRigidBody);
 
       scene.add(model); // add island mesh to scene
       //Start render loop after model loads for smoother appearance when user visits site
       renderer.setAnimationLoop( animate );
   });
-  
 
   // LIGHT
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -163,6 +163,22 @@ async function init() {
   );
   water.rotation.x = - Math.PI / 2;
   scene.add( water );
+
+  // OCEAN FLOOR Three mesh
+  /**This is the first strategy for swimming physics**/
+  //Create THREE plane mesh and place below ocean water plane
+  const oceanFloorGeometry = new THREE.PlaneGeometry( 10000, 10000 );
+  const oceanFloorMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+  const oceanFloor = new THREE.Mesh( oceanFloorGeometry, oceanFloorMaterial );
+  oceanFloor.rotation.x = - Math.PI / 2;
+  oceanFloor.position.y -= 1;
+  scene.add(oceanFloor); 
+
+  // OCEAN FLOOR Rapier
+  const oceanFloorRigidBodyType = RAPIER.RigidBodyDesc.fixed();
+  const oceanFloorRigidBody = world.createRigidBody(oceanFloorRigidBodyType);
+  const oceanFloorColliderDesc = RAPIER.ColliderDesc.cuboid(5000,1,5000);
+  world.createCollider(oceanFloorColliderDesc, oceanFloorRigidBody);
 
   // Player Body Rapier
   // create kinematic position-based rigid-body
