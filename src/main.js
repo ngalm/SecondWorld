@@ -169,7 +169,8 @@ async function init() {
   const playerRigidBodyType = RAPIER.RigidBodyDesc.kinematicPositionBased();
   const playerRigidBody = world.createRigidBody(playerRigidBodyType.setTranslation(0, 5, 0));
   // create capsule collider
-  const playerColliderDesc = RAPIER.ColliderDesc.capsule(0.5, 0.2);
+  const playerColliderDesc = RAPIER.ColliderDesc.capsule(1, 0.2);   // 1 is a more human height, better movement
+
   const playerCollider = world.createCollider(playerColliderDesc, playerRigidBody);
 
   // Kinematic Character Controller Rapier
@@ -184,12 +185,8 @@ async function init() {
     world.step()
     // update timer (clock)
     timer.update();
-    /**
-     * 1. Compute desired movement vector (based on input + camera)
-     * 2. Ask Rapier:
-     *      “How far can I move without colliding?”
-     * 3. Apply corrected movement
-    **/
+    
+    // 1. Compute desired movement vector (based on input + camera)
     const move = new THREE.Vector3();
     const delta = timer.getDelta();
     velocityY += manualGravity * delta;
@@ -214,13 +211,18 @@ async function init() {
       move.normalize().multiplyScalar(speed);
     }
     const currentPos = playerRigidBody.translation();
+    // 2. Ask Rapier “How far can I move without colliding?”
     characterController.computeColliderMovement(playerCollider, {x: move.x, y:  velocityY * delta, z: move.z});
     const corrected = characterController.computedMovement();
+    // 3. Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
     playerRigidBody.setNextKinematicTranslation(newPos);
+    // glue camera to player body
     camera.position.set(playerRigidBody.translation().x, playerRigidBody.translation().y, playerRigidBody.translation().z);
 
-    water.material.uniforms[ 'time' ].value += 1.0 / 360.0;    // make water move
+    // animate water
+    water.material.uniforms[ 'time' ].value += 1.0 / 360.0;   
+    
     renderer.render( scene, camera );
   }
 }
