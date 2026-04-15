@@ -234,7 +234,7 @@ async function init() {
     }
     const currentPos = playerRigidBody.translation();
     // 2. Ask Rapier “How far can I move without colliding?”
-    characterController.computeColliderMovement(playerCollider, {x: move.x, y:  velocityY, z: move.z});
+    characterController.computeColliderMovement(playerCollider, {x: move.x, y: velocityY * delta, z: move.z});  // for y comp: if i remove *delta i get bug that sinks player gradually past ocean floor
     const corrected = characterController.computedMovement();
     // 3. Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
