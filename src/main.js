@@ -185,29 +185,35 @@ async function init() {
   const playerRigidBodyType = RAPIER.RigidBodyDesc.kinematicPositionBased();
   const playerRigidBody = world.createRigidBody(playerRigidBodyType.setTranslation(0, 5, 0));
   // create capsule collider
-  const playerColliderDesc = RAPIER.ColliderDesc.capsule(1, 0.2);   // 1 is a more human height, better movement
+  const playerColliderDesc = RAPIER.ColliderDesc.capsule(.5, .5);   // 1 is a more human height, better movement
 
   const playerCollider = world.createCollider(playerColliderDesc, playerRigidBody);
 
   // Kinematic Character Controller Rapier
-  const characterController = world.createCharacterController(0.01);
+  const characterController = world.createCharacterController(0.2);
+  //characterController.setMaxSlopeClimbAngle(Math.PI / 3); // ~45°
+  characterController.setMinSlopeSlideAngle(Math.PI / 3); // start sliding on steep slopes
 
   let velocityY = 0;
   const manualGravity = -9.81;
   const timer = new THREE.Timer();
   // ANIMATE
   function animate() {
+
     // update physics world
     world.step()
     // update timer (clock)
     timer.update();
+    // reset gravity so we don't increase friction over time
+    if (characterController.computedGrounded()) {
+      velocityY = 0;
+    }
     
     // 1. Compute desired movement vector (based on input + camera)
     const move = new THREE.Vector3();
     const delta = timer.getDelta();
     velocityY += manualGravity * delta;
-    const speed = 5; // units per second
-    move.multiplyScalar(speed * delta);
+    move.multiplyScalar(delta);
     if (controls.isLocked) {
       const speed = 0.1;
 
@@ -228,7 +234,7 @@ async function init() {
     }
     const currentPos = playerRigidBody.translation();
     // 2. Ask Rapier “How far can I move without colliding?”
-    characterController.computeColliderMovement(playerCollider, {x: move.x, y:  velocityY * delta, z: move.z});
+    characterController.computeColliderMovement(playerCollider, {x: move.x, y:  velocityY, z: move.z});
     const corrected = characterController.computedMovement();
     // 3. Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
