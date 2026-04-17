@@ -204,16 +204,9 @@ async function init() {
     world.step()
     // update timer (clock)
     timer.update();
-    // reset gravity so we don't increase friction over time
-    if (characterController.computedGrounded()) {
-      velocityY = 0;
-    }
     
     // 1. Compute desired movement vector (based on input + camera)
     const move = new THREE.Vector3();
-    const delta = timer.getDelta();
-    velocityY += manualGravity * delta;
-    move.multiplyScalar(delta);
     if (controls.isLocked) {
       const speed = 0.1;
 
@@ -233,12 +226,26 @@ async function init() {
       move.normalize().multiplyScalar(speed);
     }
     const currentPos = playerRigidBody.translation();
+
+    const delta = timer.getDelta();
+    // if player is grounded, don't apply gravity to it's movement
+    if (characterController.computedGrounded()) {
+      velocityY = 0;  // reset gravity when grounded so friction on player body doesn't increase over time
+    }
+    else {
+      velocityY += manualGravity * delta;// gravity accumulates when player is ungrounded
+    }
+
     // 2. Ask Rapier “How far can I move without colliding?”
-    characterController.computeColliderMovement(playerCollider, {x: move.x, y: velocityY * delta, z: move.z});  // for y comp: if i remove *delta i get bug that sinks player gradually past ocean floor
+    characterController.computeColliderMovement(playerCollider, {x: move.x, y: velocityY * delta, z: move.z}); 
     const corrected = characterController.computedMovement();
     // 3. Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
     playerRigidBody.setNextKinematicTranslation(newPos);
+
+    // DEBUG //
+    console.log("newPos: ", newPos.x, newPos.y, playerRigidBody.translation().z)
+
     // glue camera to player body
     camera.position.set(playerRigidBody.translation().x, playerRigidBody.translation().y, playerRigidBody.translation().z);
 
