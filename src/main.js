@@ -243,9 +243,6 @@ async function init() {
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
     playerRigidBody.setNextKinematicTranslation(newPos);
 
-    // DEBUG //
-    console.log("newPos: ", newPos.x, newPos.y, playerRigidBody.translation().z)
-
     // glue camera to player body
     camera.position.set(playerRigidBody.translation().x, playerRigidBody.translation().y, playerRigidBody.translation().z);
 
