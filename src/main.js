@@ -11,7 +11,7 @@ async function init() {
   const textureLoader = new THREE.TextureLoader();
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-  camera.position.set(2, 7, 15);      // pov: straight on like person walking on path
+  camera.position.set(0, 15, 0);      // pov: straight on like person walking on path
   const renderer = new THREE.WebGLRenderer();
   renderer.setSize( window.innerWidth, window.innerHeight );
   // render settings for sun in SKY
@@ -65,21 +65,17 @@ async function init() {
 
   // ISLAND Threejs Mesh
   const islandTexturePath = './assets/sand.jpg';
-  //const islandNormalsPath = 'assets/islandnormals.jpg';   // for now there is no normal map for the island material, looks better
   const groundTexture = textureLoader.load(islandTexturePath);
-  groundTexture.colorSpace = THREE.SRGBColorSpace;
-  groundTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  groundTexture.needsUpdate = true;
-  //const normalMap = textureLoader.load(islandNormalsPath);
   const material = new THREE.MeshStandardMaterial({
       map: groundTexture,
-      //normalMap: normalMap,
       roughness: 0.7,
   });
-  const islandPath = './assets/large_island.glb';
+
+  const islandPath = './assets/large_island_extd.glb';
   gltfLoader.load(islandPath, 
     (gltf) => {
       const model = gltf.scene;
+      model.scale.setScalar(3);
       // vars for ISLAND trimesh collider
       let allVertices = [];
       let allIndices = [];
@@ -171,7 +167,7 @@ async function init() {
   // OCEAN FLOOR Three mesh
   /**This is the first strategy for swimming physics**/
   //Create THREE plane mesh and place below ocean water plane
-  const oceanFloorY = -1.8;   // change to move ocean floor up or down
+  const oceanFloorY = -2;   // change to move ocean floor up or down
   const oceanFloorGeometry = new THREE.PlaneGeometry( 10000, 10000 );
   const oceanFloorMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
   const oceanFloor = new THREE.Mesh( oceanFloorGeometry, oceanFloorMaterial );
@@ -188,7 +184,7 @@ async function init() {
   // Player Body Rapier
   // create kinematic position-based rigid-body
   const playerRigidBodyType = RAPIER.RigidBodyDesc.kinematicPositionBased();
-  const playerRigidBody = world.createRigidBody(playerRigidBodyType.setTranslation(0, 5, 0));
+  const playerRigidBody = world.createRigidBody(playerRigidBodyType.setTranslation(0, 8, 0));
   // create capsule collider
   const playerColliderDesc = RAPIER.ColliderDesc.capsule(.5, .5);   // 1 is a more human height, better movement
 
@@ -214,7 +210,7 @@ async function init() {
     // 1. Compute desired movement vector (based on input + camera)
     const move = new THREE.Vector3();
     if (controls.isLocked) {
-      const speed = 0.1;
+      const speed = 0.2;
 
       const forward = new THREE.Vector3();
       camera.getWorldDirection(forward);
