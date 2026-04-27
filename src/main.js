@@ -178,8 +178,16 @@ async function init() {
   // OCEAN FLOOR Rapier
   const oceanFloorRigidBodyType = RAPIER.RigidBodyDesc.fixed().setTranslation(0.0, oceanFloorY, 0.0);;
   const oceanFloorRigidBody = world.createRigidBody(oceanFloorRigidBodyType);
-  const oceanFloorColliderDesc = RAPIER.ColliderDesc.cuboid(5000,1,5000).setSensor(true);
+  const oceanFloorColliderDesc = RAPIER.ColliderDesc.cuboid(5000,.05,5000)
   world.createCollider(oceanFloorColliderDesc, oceanFloorRigidBody);
+
+  // OCEAN SURFACE Rapier
+  /* This rigid body and collider */
+  const waistDeep = -1.0
+  const oceanSurfaceRigidBodyType = RAPIER.RigidBodyDesc.fixed().setTranslation(0.0, waistDeep, 0.0);;
+  const oceanSurfaceRigidBody = world.createRigidBody(oceanSurfaceRigidBodyType);
+  const oceanSurfaceColliderDesc = RAPIER.ColliderDesc.cuboid(5000,.05,5000).setSensor(true).setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS); // Enables event reporting
+  world.createCollider(oceanSurfaceColliderDesc, oceanSurfaceRigidBody);
 
   // Player Body Rapier
   // create kinematic position-based rigid-body
@@ -207,7 +215,7 @@ async function init() {
     // update timer (clock)
     timer.update();
     
-    // 1. Compute desired movement vector (based on input + camera)
+    // Compute desired movement vector (based on input + camera)
     const move = new THREE.Vector3();
     if (controls.isLocked) {
       const speed = 0.2;
@@ -238,11 +246,15 @@ async function init() {
       velocityY += manualGravity * delta;// gravity accumulates when player is ungrounded
     }
 
-    // 2. Ask Rapier “How far can I move without colliding?”
+    // “How far can I move without colliding?”
     characterController.computeColliderMovement(playerCollider, {x: move.x, y: velocityY * delta, z: move.z}); 
     const corrected = characterController.computedMovement();
-    // 3. Apply corrected movement
+    // Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
+    /* !TODO: apply buoyancy to newPos if in water */
+    if (checkInWater()) {
+      applyBuoyancy(newPos);
+    }
     playerRigidBody.setNextKinematicTranslation(newPos);
 
     // glue camera to player body
@@ -252,6 +264,19 @@ async function init() {
     water.material.uniforms[ 'time' ].value += 1.0 / 360.0;   
     
     renderer.render( scene, camera );
+  }
+
+  /* returns boolean indicating status of player Kinematic Rigid Body in or out of water */
+  function checkInWater() {
+    // use ocean surface sensor status to check if player rigid body is in water
+    // return true or false
+    return false;
+  }
+
+  /* takes in POS position vector and applys buoyancy lift to it  */
+  function applyBuoyancy(pos) {
+    // given POS position vector 
+    //  apply an upward lift to y comp (as long as it is submerged ?)
   }
 }
 
