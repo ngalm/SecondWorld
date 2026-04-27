@@ -178,7 +178,7 @@ async function init() {
   // OCEAN FLOOR Rapier
   const oceanFloorRigidBodyType = RAPIER.RigidBodyDesc.fixed().setTranslation(0.0, oceanFloorY, 0.0);;
   const oceanFloorRigidBody = world.createRigidBody(oceanFloorRigidBodyType);
-  const oceanFloorColliderDesc = RAPIER.ColliderDesc.cuboid(5000,1,5000);
+  const oceanFloorColliderDesc = RAPIER.ColliderDesc.cuboid(5000,1,5000).setSensor(true);
   world.createCollider(oceanFloorColliderDesc, oceanFloorRigidBody);
 
   // Player Body Rapier
@@ -222,8 +222,8 @@ async function init() {
 
       if (keys['KeyW']) move.add(forward);
       if (keys['KeyS']) move.sub(forward);
-      if (keys['KeyA']) move.add(right);
-      if (keys['KeyD']) move.sub(right);
+      if (keys['KeyA']) move.sub(right);
+      if (keys['KeyD']) move.add(right);
 
       move.normalize().multiplyScalar(speed);
     }
