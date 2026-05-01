@@ -142,6 +142,13 @@ async function init() {
 
   sun.setFromSphericalCoords( 1, phi, theta );
   sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+  
+  // helpful sky debugging
+  console.log("turbidity: ", sky.material.uniforms[ 'turbidity' ].value,
+    "rayleigh: ", sky.material.uniforms[ 'rayleigh' ].value,
+    "mieCoefficient: ", sky.material.uniforms[ 'mieCoefficient' ].value,
+    "mieDirectionalG: ", sky.material.uniforms[ 'mieDirectionalG' ].value,
+  );
 
   // WATER
   const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
