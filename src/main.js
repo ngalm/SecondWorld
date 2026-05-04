@@ -4,6 +4,7 @@ import { Water } from 'three/addons/objects/Water.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import RAPIER from '@dimforge/rapier3d-compat';
+import { SimplexNoise } from 'three/examples/jsm/Addons.js';
 
 async function init() {
   // THREE SETUP: loader, scene, camera, and renderer
@@ -121,27 +122,35 @@ async function init() {
       renderer.setAnimationLoop( animate );
   });
 
-  // LIGHT
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-  scene.add(ambientLight);
-
-  const sunLight = new THREE.DirectionalLight(0xffffff, 1);
-  sunLight.position.set(50, 100, 50);
-  scene.add(sunLight);
-
   // SKY
   const sky = new Sky(); 
   sky.scale.setScalar( 450000 );
   scene.add( sky );
 
   const sun = new THREE.Vector3();
-  const elevation = 3;
+  let elevation = 0;   // updated in updateSun()
   const azimuth = 180;
-  const phi = THREE.MathUtils.degToRad( 90 - elevation);
+  let phi = THREE.MathUtils.degToRad( 90 - elevation);    // updated in updateSun()
   const theta = THREE.MathUtils.degToRad(azimuth );
 
   sun.setFromSphericalCoords( 1, phi, theta );
   sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+
+  // LIGHT
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
+
+  let sunIntensity = elevation / 10
+  const sunLight = new THREE.DirectionalLight(0xffd8a8, sunIntensity);
+  sunLight.position.set(sun.x + 10, sun.y + 10, sun.z + 10);
+  scene.add(sunLight);
+
+  // helpful SKY debugging
+  console.log("turbidity: ", sky.material.uniforms[ 'turbidity' ].value,
+    "rayleigh: ", sky.material.uniforms[ 'rayleigh' ].value,
+    "mieCoefficient: ", sky.material.uniforms[ 'mieCoefficient' ].value,
+    "mieDirectionalG: ", sky.material.uniforms[ 'mieDirectionalG' ].value,
+  );
 
   // WATER
   const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
@@ -230,6 +239,10 @@ async function init() {
     const currentPos = playerRigidBody.translation();
 
     const delta = timer.getDelta();
+    // update sun
+    updateSun();
+    //console.log("sun position at e = 90deg: ", sun.x, sun.y, sun.z);
+
     // if player is grounded, don't apply gravity to it's movement
     if (characterController.computedGrounded()) {
       velocityY = 0;  // reset gravity when grounded so friction on player body doesn't increase over time
@@ -252,6 +265,40 @@ async function init() {
     water.material.uniforms[ 'time' ].value += 1.0 / 360.0;   
     
     renderer.render( scene, camera );
+  }
+
+  const maxIntensity = 10;
+  const minIntensity = 0;
+  const middayPoint = 90;
+  const incrementConst = .1;
+  // increase sun's elevation as time passes
+  // Mutates: ELEVATION and PHI
+  function updateSun() {
+
+    phi = THREE.MathUtils.degToRad( 90 - elevation);    // update phi
+    sun.setFromSphericalCoords( 1, phi, theta);      // update sun's position in sky
+    sky.material.uniforms['sunPosition'].value.copy(sun);
+    // increase sun's elevation each frame
+    elevation += incrementConst;    
+    if (elevation >= 0 && elevation <= 90) {    // sunrise - afternoon:
+      if (sunLight.intensity < maxIntensity) {
+        sunLight.intensity = elevation / 10;    // increase sun's intensity proportional to its elevation
+      }
+    }
+    else if (elevation >= 90 && elevation <= 3600) {  // afternoon - sunset:
+      if (sunLight.intensity > minIntensity) {
+        sunLight.intensity -= 1 / elevation;            // decrease sun's intensity proportional to its elevation
+      }
+    }
+    if (elevation >= 360) {                   // nighttime - sunrise: 
+      elevation = 0;                          // reset elevation 
+    }
+
+    // debug
+    console.log(
+      "sunLight intensity: ", sunLight.intensity,
+      "sun elevation: ", elevation
+    );
   }
 }
 
