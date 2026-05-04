@@ -128,9 +128,9 @@ async function init() {
   scene.add( sky );
 
   const sun = new THREE.Vector3();
-  let elevation = 90;
+  let elevation = 0;   // updated in updateSun()
   const azimuth = 180;
-  let phi = THREE.MathUtils.degToRad( 90 - elevation);
+  let phi = THREE.MathUtils.degToRad( 90 - elevation);    // updated in updateSun()
   const theta = THREE.MathUtils.degToRad(azimuth );
 
   sun.setFromSphericalCoords( 1, phi, theta );
@@ -240,7 +240,7 @@ async function init() {
 
     const delta = timer.getDelta();
     // update sun
-    //updateSun(delta);
+    updateSun();
     //console.log("sun position at e = 90deg: ", sun.x, sun.y, sun.z);
 
     // if player is grounded, don't apply gravity to it's movement
@@ -270,21 +270,32 @@ async function init() {
   const maxIntensity = 10;
   const minIntensity = 0;
   const middayPoint = 90;
-  // given delta time, increase sun's elevation as time passes
-  // may need to sync sky's sun, water's sun, and island's sun positions/colors
-  function updateSun(deltaT) {
+  const incrementConst = .1;
+  // increase sun's elevation as time passes
+  // Mutates: ELEVATION and PHI
+  function updateSun() {
 
-    elevation += .10;    // increase sun's elevation with each frame
     phi = THREE.MathUtils.degToRad( 90 - elevation);    // update phi
     sun.setFromSphericalCoords( 1, phi, theta);      // update sun's position in sky
     sky.material.uniforms['sunPosition'].value.copy(sun);
-    if (elevation <= middayPoint && sunLight.intensity <= maxIntensity) {
-      sunLight.intensity = elevation / 10;   
-    };
-    if (elevation >= middayPoint && sunLight.intensity >= minIntensity) {
-      sunLight.intensity -= (elevation / 10);
+    // increase sun's elevation each frame
+    elevation += incrementConst;    
+    if (elevation >= 0 && elevation <= 90) {    // sunrise - afternoon:
+      if (sunLight.intensity < maxIntensity) {
+        sunLight.intensity = elevation / 10;    // increase sun's intensity proportional to its elevation
+      }
     }
-    console.log("delta: ", deltaT,
+    else if (elevation >= 90 && elevation <= 3600) {  // afternoon - sunset:
+      if (sunLight.intensity > minIntensity) {
+        sunLight.intensity -= 1 / elevation;            // decrease sun's intensity proportional to its elevation
+      }
+    }
+    if (elevation >= 360) {                   // nighttime - sunrise: 
+      elevation = 0;                          // reset elevation 
+    }
+
+    // debug
+    console.log(
       "sunLight intensity: ", sunLight.intensity,
       "sun elevation: ", elevation
     );
