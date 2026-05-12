@@ -273,23 +273,27 @@ async function init() {
   const incrementConst = .1;
   // increase sun's elevation as time passes
   // Mutates: ELEVATION and PHI
-  function updateSun() {
-
+  function updateSun() {  
     phi = THREE.MathUtils.degToRad( 90 - elevation);    // update phi
     sun.setFromSphericalCoords( 1, phi, theta);      // update sun's position in sky
     sky.material.uniforms['sunPosition'].value.copy(sun);
-    // increase sun's elevation each frame
-    elevation += incrementConst;    
     if (elevation >= 0 && elevation <= 90) {    // sunrise - afternoon:
+        elevation += incrementConst;
       if (sunLight.intensity < maxIntensity) {
         sunLight.intensity = elevation / 10;    // increase sun's intensity proportional to its elevation
       }
     }
-    else if (elevation >= 90 && elevation <= 3600) {  // afternoon - sunset:
+    else if (elevation >= 90 && elevation <= 360) {  // afternoon - sunset:
+      elevation += incrementConst;  
       if (sunLight.intensity > minIntensity) {
-        sunLight.intensity -= 1 / elevation;            // decrease sun's intensity proportional to its elevation
+        if (elevation >=180) {
+          sunLight.intensity -= 10 / elevation;        // speed up dimming after
+        }
+        else {
+          sunLight.intensity -= 1 / elevation;            // decrease sun's intensity proportional to its elevation
+        }
       }
-    }
+    } 
     if (elevation >= 360) {                   // nighttime - sunrise: 
       elevation = 0;                          // reset elevation 
     }
