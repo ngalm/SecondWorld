@@ -4,6 +4,7 @@ import { Water } from 'three/addons/objects/Water.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import RAPIER from '@dimforge/rapier3d-compat';
+import { SimplexNoise } from 'three/examples/jsm/Addons.js';
 
 async function init() {
   // THREE SETUP: loader, scene, camera, and renderer
@@ -121,27 +122,35 @@ async function init() {
       renderer.setAnimationLoop( animate );
   });
 
-  // LIGHT
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-  scene.add(ambientLight);
-
-  const sunLight = new THREE.DirectionalLight(0xffffff, 1);
-  sunLight.position.set(50, 100, 50);
-  scene.add(sunLight);
-
   // SKY
   const sky = new Sky(); 
   sky.scale.setScalar( 450000 );
   scene.add( sky );
 
   const sun = new THREE.Vector3();
-  const elevation = 3;
+  let elevation = 0;   // updated in updateSun()
   const azimuth = 180;
-  const phi = THREE.MathUtils.degToRad( 90 - elevation);
+  let phi = THREE.MathUtils.degToRad( 90 - elevation);    // updated in updateSun()
   const theta = THREE.MathUtils.degToRad(azimuth );
 
   sun.setFromSphericalCoords( 1, phi, theta );
   sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+
+  // LIGHT
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
+
+  let sunIntensity = elevation / 10
+  const sunLight = new THREE.DirectionalLight(0xffd8a8, sunIntensity);
+  sunLight.position.set(sun.x + 10, sun.y + 10, sun.z + 10);
+  scene.add(sunLight);
+
+  // helpful SKY debugging
+  console.log("turbidity: ", sky.material.uniforms[ 'turbidity' ].value,
+    "rayleigh: ", sky.material.uniforms[ 'rayleigh' ].value,
+    "mieCoefficient: ", sky.material.uniforms[ 'mieCoefficient' ].value,
+    "mieDirectionalG: ", sky.material.uniforms[ 'mieDirectionalG' ].value,
+  );
 
   // WATER
   const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
@@ -162,12 +171,12 @@ async function init() {
     }
   );
   water.rotation.x = - Math.PI / 2;
-  scene.add( water );
+  //scene.add( water );
 
   // OCEAN FLOOR Three mesh
   /**This is the first strategy for swimming physics**/
   //Create THREE plane mesh and place below ocean water plane
-  const oceanFloorY = -2;   // change to move ocean floor up or down
+  const oceanFloorY = -3;   // change to move ocean floor up or down
   const oceanFloorGeometry = new THREE.PlaneGeometry( 10000, 10000 );
   const oceanFloorMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
   const oceanFloor = new THREE.Mesh( oceanFloorGeometry, oceanFloorMaterial );
@@ -183,7 +192,7 @@ async function init() {
 
   // OCEAN SURFACE Rapier
   /* This rigid body and collider */
-  const waistDeep = -1.0
+  const waistDeep = -2.0
   const oceanSurfaceRigidBodyType = RAPIER.RigidBodyDesc.fixed().setTranslation(0.0, waistDeep, 0.0);;
   const oceanSurfaceRigidBody = world.createRigidBody(oceanSurfaceRigidBodyType);
   const oceanSurfaceColliderDesc = RAPIER.ColliderDesc.cuboid(5000,.05,5000).setSensor(true).setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS); // Enables event reporting
@@ -238,6 +247,9 @@ async function init() {
     const currentPos = playerRigidBody.translation();
 
     const delta = timer.getDelta();
+    // update sun
+    updateSun();
+
     // if player is grounded, don't apply gravity to it's movement
     if (characterController.computedGrounded()) {
       velocityY = 0;  // reset gravity when grounded so friction on player body doesn't increase over time
@@ -251,8 +263,10 @@ async function init() {
     const corrected = characterController.computedMovement();
     // Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
+
+    console.log("newPos before buoyancy: ", newPos.y,"in water? ", checkInWater(newPos.y), "newPos after buoyancy: ", newPos.y);
     /* !TODO: apply buoyancy to newPos if in water */
-    if (checkInWater()) {
+    if (checkInWater(newPos.y)) {
       applyBuoyancy(newPos);
     }
     playerRigidBody.setNextKinematicTranslation(newPos);
@@ -266,17 +280,57 @@ async function init() {
     renderer.render( scene, camera );
   }
 
+  const waterLevel = .3;
   /* returns boolean indicating status of player Kinematic Rigid Body in or out of water */
-  function checkInWater() {
+  function checkInWater(y) {
     // use ocean surface sensor status to check if player rigid body is in water
     // return true or false
+    if (y <= waterLevel) {
+      return true;
+    }
     return false;
   }
 
+  
   /* takes in POS position vector and applys buoyancy lift to it  */
+  let angle = 0;
   function applyBuoyancy(pos) {
     // given POS position vector 
     //  apply an upward lift to y comp (as long as it is submerged ?)
+    pos.y = Math.cos(pos.y );
+    console.log("cos: ",Math.cos(pos.y) ,"pos.y: ", pos.y)
+    return 
+  }
+
+  const maxIntensity = 10;
+  const minIntensity = 0;
+  const incrementConst = .1;
+  // increase sun's elevation as time passes
+  // Mutates: ELEVATION and PHI
+  function updateSun() {  
+    phi = THREE.MathUtils.degToRad( 90 - elevation);    // update phi
+    sun.setFromSphericalCoords( 1, phi, theta);      // update sun's position in sky
+    sky.material.uniforms['sunPosition'].value.copy(sun);
+    if (elevation >= 0 && elevation <= 90) {    // sunrise - afternoon:
+        elevation += incrementConst;
+      if (sunLight.intensity < maxIntensity) {
+        sunLight.intensity = elevation / 10;    // increase sun's intensity proportional to its elevation
+      }
+    }
+    else if (elevation >= 90 && elevation <= 360) {  // afternoon - sunset:
+      elevation += incrementConst;  
+      if (sunLight.intensity > minIntensity) {
+        if (elevation >=180) {
+          sunLight.intensity -= 10 / elevation;        // speed up dimming after
+        }
+        else {
+          sunLight.intensity -= 1 / elevation;            // decrease sun's intensity proportional to its elevation
+        }
+      }
+    } 
+    if (elevation >= 360) {                   // nighttime - sunrise: 
+      elevation = 0;                          // reset elevation 
+    }
   }
 }
 
