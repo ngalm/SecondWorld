@@ -269,7 +269,6 @@ async function init() {
 
   const maxIntensity = 10;
   const minIntensity = 0;
-  const middayPoint = 90;
   const incrementConst = .1;
   // increase sun's elevation as time passes
   // Mutates: ELEVATION and PHI
