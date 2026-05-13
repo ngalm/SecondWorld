@@ -171,12 +171,12 @@ async function init() {
     }
   );
   water.rotation.x = - Math.PI / 2;
-  //scene.add( water );
+  scene.add( water );
 
   // OCEAN FLOOR Three mesh
   /**This is the first strategy for swimming physics**/
   //Create THREE plane mesh and place below ocean water plane
-  const oceanFloorY = -3;   // change to move ocean floor up or down
+  const oceanFloorY = -1;   // change to move ocean floor up or down
   const oceanFloorGeometry = new THREE.PlaneGeometry( 10000, 10000 );
   const oceanFloorMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
   const oceanFloor = new THREE.Mesh( oceanFloorGeometry, oceanFloorMaterial );
@@ -192,11 +192,13 @@ async function init() {
 
   // OCEAN SURFACE Rapier
   /* This rigid body and collider */
-  const waistDeep = -2.0
+  /*
+  const waistDeep = -3.0
   const oceanSurfaceRigidBodyType = RAPIER.RigidBodyDesc.fixed().setTranslation(0.0, waistDeep, 0.0);;
   const oceanSurfaceRigidBody = world.createRigidBody(oceanSurfaceRigidBodyType);
   const oceanSurfaceColliderDesc = RAPIER.ColliderDesc.cuboid(5000,.05,5000).setSensor(true).setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS); // Enables event reporting
   world.createCollider(oceanSurfaceColliderDesc, oceanSurfaceRigidBody);
+  */
 
   // Player Body Rapier
   // create kinematic position-based rigid-body
@@ -264,11 +266,8 @@ async function init() {
     // Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
 
-    console.log("newPos before buoyancy: ", newPos.y,"in water? ", checkInWater(newPos.y), "newPos after buoyancy: ", newPos.y);
-    /* !TODO: apply buoyancy to newPos if in water */
-    if (checkInWater(newPos.y)) {
-      applyBuoyancy(newPos);
-    }
+    applyBuoyancy(newPos);
+
     playerRigidBody.setNextKinematicTranslation(newPos);
 
     // glue camera to player body
@@ -280,26 +279,17 @@ async function init() {
     renderer.render( scene, camera );
   }
 
-  const waterLevel = .3;
-  /* returns boolean indicating status of player Kinematic Rigid Body in or out of water */
-  function checkInWater(y) {
-    // use ocean surface sensor status to check if player rigid body is in water
-    // return true or false
-    if (y <= waterLevel) {
-      return true;
-    }
-    return false;
-  }
-
-  
   /* takes in POS position vector and applys buoyancy lift to it  */
-  let angle = 0;
+  const waterLevel = .3;
   function applyBuoyancy(pos) {
     // given POS position vector 
     //  apply an upward lift to y comp (as long as it is submerged ?)
-    pos.y = Math.cos(pos.y );
-    console.log("cos: ",Math.cos(pos.y) ,"pos.y: ", pos.y)
-    return 
+
+   if (pos.y <= waterLevel && pos.y >= -1) {
+    pos.y =  pos.y + (Math.sin(timer.getElapsed()) * 0.5) / 100;
+   console.log("y position: ", pos.y);
+   return 
+   }
   }
 
   const maxIntensity = 10;
