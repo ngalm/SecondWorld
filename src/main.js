@@ -145,13 +145,6 @@ async function init() {
   sunLight.position.set(sun.x + 10, sun.y + 10, sun.z + 10);
   scene.add(sunLight);
 
-  // helpful SKY debugging
-  console.log("turbidity: ", sky.material.uniforms[ 'turbidity' ].value,
-    "rayleigh: ", sky.material.uniforms[ 'rayleigh' ].value,
-    "mieCoefficient: ", sky.material.uniforms[ 'mieCoefficient' ].value,
-    "mieDirectionalG: ", sky.material.uniforms[ 'mieDirectionalG' ].value,
-  );
-
   // WATER
   const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
   const waterNormalsPath =  './assets/waternormals.jpg';
@@ -174,7 +167,6 @@ async function init() {
   scene.add( water );
 
   // OCEAN FLOOR Three mesh
-  /**This is the first strategy for swimming physics**/
   //Create THREE plane mesh and place below ocean water plane
   const oceanFloorY = -1;   // change to move ocean floor up or down
   const oceanFloorGeometry = new THREE.PlaneGeometry( 10000, 10000 );
@@ -214,7 +206,7 @@ async function init() {
 
     // update physics world
     world.step()
-    // update timer (clock)
+
     timer.update();
     
     // Compute desired movement vector (based on input + camera)
@@ -240,7 +232,7 @@ async function init() {
     const currentPos = playerRigidBody.translation();
 
     const delta = timer.getDelta();
-    // update sun
+
     updateSun();
 
     // if player is grounded, don't apply gravity to it's movement
@@ -279,8 +271,6 @@ async function init() {
     const buoyancyFactor = Math.sin(2.5*time) * 0.0018;   
     if (pos.y <= waterLevel && pos.y >= -.4) { /// if player is in the water and not below map
       pos.y = pos.y + buoyancyFactor;
-      //pos.x = pos.x + Math.sin(time) * 0.0005;
-
       console.log("y position: ", pos.y);
     }
     return;
