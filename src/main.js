@@ -176,9 +176,10 @@ async function init() {
   // OCEAN FLOOR Three mesh
   /**This is the first strategy for swimming physics**/
   //Create THREE plane mesh and place below ocean water plane
-  const oceanFloorY = -2;   // change to move ocean floor up or down
+  const oceanFloorY = -1;   // change to move ocean floor up or down
   const oceanFloorGeometry = new THREE.PlaneGeometry( 10000, 10000 );
-  const oceanFloorMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+  const whiteSandColor = 0xf5ebd8;
+  const oceanFloorMaterial = new THREE.MeshBasicMaterial( { color: whiteSandColor } );
   const oceanFloor = new THREE.Mesh( oceanFloorGeometry, oceanFloorMaterial );
   oceanFloor.rotation.x = - Math.PI / 2;
   oceanFloor.position.y = oceanFloorY;
@@ -187,7 +188,7 @@ async function init() {
   // OCEAN FLOOR Rapier
   const oceanFloorRigidBodyType = RAPIER.RigidBodyDesc.fixed().setTranslation(0.0, oceanFloorY, 0.0);;
   const oceanFloorRigidBody = world.createRigidBody(oceanFloorRigidBodyType);
-  const oceanFloorColliderDesc = RAPIER.ColliderDesc.cuboid(5000,1,5000).setSensor(true);
+  const oceanFloorColliderDesc = RAPIER.ColliderDesc.cuboid(5000,.05,5000)
   world.createCollider(oceanFloorColliderDesc, oceanFloorRigidBody);
 
   // Player Body Rapier
@@ -216,7 +217,7 @@ async function init() {
     // update timer (clock)
     timer.update();
     
-    // 1. Compute desired movement vector (based on input + camera)
+    // Compute desired movement vector (based on input + camera)
     const move = new THREE.Vector3();
     if (controls.isLocked) {
       const speed = 0.2;
@@ -241,7 +242,6 @@ async function init() {
     const delta = timer.getDelta();
     // update sun
     updateSun();
-    //console.log("sun position at e = 90deg: ", sun.x, sun.y, sun.z);
 
     // if player is grounded, don't apply gravity to it's movement
     if (characterController.computedGrounded()) {
@@ -251,11 +251,14 @@ async function init() {
       velocityY += manualGravity * delta;// gravity accumulates when player is ungrounded
     }
 
-    // 2. Ask Rapier “How far can I move without colliding?”
+    // “How far can I move without colliding?”
     characterController.computeColliderMovement(playerCollider, {x: move.x, y: velocityY * delta, z: move.z}); 
     const corrected = characterController.computedMovement();
-    // 3. Apply corrected movement
+    // Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
+
+    applyBuoyancy(newPos);
+
     playerRigidBody.setNextKinematicTranslation(newPos);
 
     // glue camera to player body
@@ -265,6 +268,22 @@ async function init() {
     water.material.uniforms[ 'time' ].value += 1.0 / 360.0;   
     
     renderer.render( scene, camera );
+  }
+
+  /* takes in POS position vector and applys buoyancy lift to it  */
+  const waterLevel = .4;
+  function applyBuoyancy(pos) {
+    // given POS position vector 
+    //  apply an upward lift to y comp (as long as it is submerged ?)
+    const time = timer.getElapsed();
+    const buoyancyFactor = Math.sin(2.5*time) * 0.0018;   
+    if (pos.y <= waterLevel && pos.y >= -.4) { /// if player is in the water and not below map
+      pos.y = pos.y + buoyancyFactor;
+      //pos.x = pos.x + Math.sin(time) * 0.0005;
+
+      console.log("y position: ", pos.y);
+    }
+    return;
   }
 
   const maxIntensity = 10;
@@ -296,12 +315,6 @@ async function init() {
     if (elevation >= 360) {                   // nighttime - sunrise: 
       elevation = 0;                          // reset elevation 
     }
-
-    // debug
-    console.log(
-      "sunLight intensity: ", sunLight.intensity,
-      "sun elevation: ", elevation
-    );
   }
 }
 
