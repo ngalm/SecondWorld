@@ -178,7 +178,8 @@ async function init() {
   //Create THREE plane mesh and place below ocean water plane
   const oceanFloorY = -1;   // change to move ocean floor up or down
   const oceanFloorGeometry = new THREE.PlaneGeometry( 10000, 10000 );
-  const oceanFloorMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+  const whiteSandColor = 0xf5ebd8;
+  const oceanFloorMaterial = new THREE.MeshBasicMaterial( { color: whiteSandColor } );
   const oceanFloor = new THREE.Mesh( oceanFloorGeometry, oceanFloorMaterial );
   oceanFloor.rotation.x = - Math.PI / 2;
   oceanFloor.position.y = oceanFloorY;
@@ -189,16 +190,6 @@ async function init() {
   const oceanFloorRigidBody = world.createRigidBody(oceanFloorRigidBodyType);
   const oceanFloorColliderDesc = RAPIER.ColliderDesc.cuboid(5000,.05,5000)
   world.createCollider(oceanFloorColliderDesc, oceanFloorRigidBody);
-
-  // OCEAN SURFACE Rapier
-  /* This rigid body and collider */
-  /*
-  const waistDeep = -3.0
-  const oceanSurfaceRigidBodyType = RAPIER.RigidBodyDesc.fixed().setTranslation(0.0, waistDeep, 0.0);;
-  const oceanSurfaceRigidBody = world.createRigidBody(oceanSurfaceRigidBodyType);
-  const oceanSurfaceColliderDesc = RAPIER.ColliderDesc.cuboid(5000,.05,5000).setSensor(true).setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS); // Enables event reporting
-  world.createCollider(oceanSurfaceColliderDesc, oceanSurfaceRigidBody);
-  */
 
   // Player Body Rapier
   // create kinematic position-based rigid-body
@@ -280,16 +271,19 @@ async function init() {
   }
 
   /* takes in POS position vector and applys buoyancy lift to it  */
-  const waterLevel = .3;
+  const waterLevel = .4;
   function applyBuoyancy(pos) {
     // given POS position vector 
     //  apply an upward lift to y comp (as long as it is submerged ?)
+    const time = timer.getElapsed();
+    const buoyancyFactor = Math.sin(2.5*time) * 0.0018;   
+    if (pos.y <= waterLevel && pos.y >= -.4) { /// if player is in the water and not below map
+      pos.y = pos.y + buoyancyFactor;
+      //pos.x = pos.x + Math.sin(time) * 0.0005;
 
-   if (pos.y <= waterLevel && pos.y >= -1) {
-    pos.y =  pos.y + (Math.sin(timer.getElapsed()) * 0.5) / 100;
-   console.log("y position: ", pos.y);
-   return 
-   }
+      console.log("y position: ", pos.y);
+    }
+    return;
   }
 
   const maxIntensity = 10;
