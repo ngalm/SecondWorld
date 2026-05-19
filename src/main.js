@@ -278,7 +278,7 @@ async function init() {
 
   const maxIntensity = 9;
   const minIntensity = 0;
-  const incrementConst = .1;
+  const incrementConst = .01;
   // increase sun's elevation as time passes
   // Mutates: ELEVATION, SUNLIGHT.INTENSITY, and PHI. Note that elevation adjusts sunlight.intensity correctly only if both start at 0
   function updateSun() {  
