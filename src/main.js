@@ -276,30 +276,28 @@ async function init() {
     return;
   }
 
-  const maxIntensity = 9;
+  const maxIntensity = 5;
   const minIntensity = 0;
-  const incrementConst = .01;
+  const elevationIncConst = .01;
+  const sunlightIntensityIncConst = .02;
   // increase sun's elevation as time passes
   // Mutates: ELEVATION, SUNLIGHT.INTENSITY, and PHI. Note that elevation adjusts sunlight.intensity correctly only if both start at 0
   function updateSun() {  
     phi = THREE.MathUtils.degToRad( 90 - elevation);    // update phi
-    sun.setFromSphericalCoords( 1, phi, theta);      // update sun's position in sky
-    sky.material.uniforms['sunPosition'].value.copy(sun);
+    sun.setFromSphericalCoords( 1, phi, theta);      // update sun vector's position
+    sunLight.position.copy(sun).multiplyScalar(10000); // sync sunLight directional light to sun vector's position
+    sky.material.uniforms['sunPosition'].value.copy(sun); // sync sky object's sun to sun vector's position
+    water.material.uniforms['sunDirection'].value.copy(sun).normalize();
     if (elevation >= 0 && elevation <= 90) {    // sunrise - afternoon:
-        elevation += incrementConst;
+        elevation += elevationIncConst;
       if (sunLight.intensity < maxIntensity) {
-        sunLight.intensity = elevation / 10;    // increase sun's intensity proportional to its elevation
+        sunLight.intensity += sunlightIntensityIncConst / 5;    // increase sun's intensity proportional to its elevation
       }
     }
     else if (elevation >= 90 && elevation <= 360) {  // afternoon - sunset:
-      elevation += incrementConst;  
+      elevation += elevationIncConst;  
       if (sunLight.intensity > minIntensity) {
-        if (elevation >=178) {
-          sunLight.intensity -= 10 / elevation;        // speed up dimming after
-        }
-        else {
-          sunLight.intensity -= 1 / elevation;            // decrease sun's intensity proportional to its elevation
-        }
+        sunLight.intensity -= sunlightIntensityIncConst / 5;            // decrease sun's intensity proportional to its elevation
       }
     } 
     if (elevation >= 360) {                   // nighttime - sunrise: 
@@ -307,5 +305,6 @@ async function init() {
     }
   }
 }
+
 
 init();
