@@ -11,7 +11,7 @@ async function init() {
   const gltfLoader = new GLTFLoader();
   const textureLoader = new THREE.TextureLoader();
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+  const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 500000 );
   camera.position.set(0, 15, 0);      // pov: straight on like person walking on path
   const renderer = new THREE.WebGLRenderer();
   renderer.setSize( window.innerWidth, window.innerHeight );
@@ -69,7 +69,7 @@ async function init() {
   const groundTexture = textureLoader.load(islandTexturePath);
   const material = new THREE.MeshStandardMaterial({
       map: groundTexture,
-      roughness: 0.7,
+      roughness: 1,
   });
 
   const islandPath = './assets/large_island_extd.glb';
@@ -122,28 +122,65 @@ async function init() {
       renderer.setAnimationLoop( animate );
   });
 
+
+
+  // SUN
+  // Sun THREE vector
+  const sun = new THREE.Vector3();
+  let sunElevation = 0;   // updated in updateSun()
+  const azimuth = 180;
+  let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSun()
+  const theta = THREE.MathUtils.degToRad(azimuth );
+  sun.setFromSphericalCoords( 1, phi, theta );  // use spherical coords to place sun in sky
+
+  //Sun THREE Directional Light object
+  let sunIntensity = 0;
+  const sunLight = new THREE.DirectionalLight(0xffd8a8, sunIntensity);
+  sunLight.position.set(sun.x, sun.y, sun.z);    // attach sunLight directional light to the sun vector
+  scene.add(sunLight);
+
   // SKY
   const sky = new Sky(); 
-  sky.scale.setScalar( 450000 );
-  scene.add( sky );
+  sky.scale.setScalar(450000);
+  scene.add(sky);
+  sky.material.uniforms['sunPosition'].value.copy(sun); // tell sky where sun is
 
-  const sun = new THREE.Vector3();
-  let elevation = 0;   // updated in updateSun()
-  const azimuth = 180;
-  let phi = THREE.MathUtils.degToRad( 90 - elevation);    // updated in updateSun()
-  const theta = THREE.MathUtils.degToRad(azimuth );
+  // MOON
+  // Moon THREE vector
+  const moonScale = 90000;
+  const moon = new THREE.Vector3();
+  let moonElevation = 180 + sunElevation;
+  const moonAzimuth = 180;
+  let moonPhi = THREE.MathUtils.degToRad(90 - moonElevation);
+  const moonTheta = THREE.MathUtils.degToRad(moonAzimuth);
+  moon.setFromSphericalCoords(1, moonPhi, moonTheta);   // use spherical coords to place moon in sky
 
-  sun.setFromSphericalCoords( 1, phi, theta );
-  sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+  // Moon THREE Directional Light object
+  let moonIntensity = 1;
+  const moonLight = new THREE.DirectionalLight(0xacacc1, moonIntensity);
+  moonLight.position.set(moon.x, moon.y, moon.z).multiplyScalar(moonScale);
+  scene.add(moonLight);
 
-  // LIGHT
+  // Moon THREE Mesh object
+  const moonTexturePath = './assets/moon_texture.jpg';
+  const moonTexture = textureLoader.load(moonTexturePath);
+  const moonMaterial = new THREE.MeshStandardMaterial({
+      map: moonTexture,
+      emissive : 0x8a7f8d,
+      emissiveIntensity : 2
+  });
+  const moonGeometry = new THREE.SphereGeometry(1000, 20, 20);
+  const moonMesh = new THREE.Mesh( moonGeometry, moonMaterial);
+  moonMesh.position.set(moon.x, moon.y, moon.z).multiplyScalar(moonScale);
+  console.log("moon: ", moon, "moonMesh: ", moonMesh.position);
+  scene.add(moonMesh); 
+  
+  // AMBIENT LIGHT
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
   scene.add(ambientLight);
 
-  let sunIntensity = elevation / 10
-  const sunLight = new THREE.DirectionalLight(0xffd8a8, sunIntensity);
-  sunLight.position.set(sun.x + 10, sun.y + 10, sun.z + 10);
-  scene.add(sunLight);
+
+
 
   // WATER
   const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
@@ -233,6 +270,7 @@ async function init() {
 
     const delta = timer.getDelta();
 
+    //moonMaterial.side = THREE.FrontSide;
     updateSun();
 
     // if player is grounded, don't apply gravity to it's movement
@@ -278,31 +316,40 @@ async function init() {
 
   const maxIntensity = 5;
   const minIntensity = 0;
-  const elevationIncConst = .01;
+  const sunElevationIncConst = .01;
   const sunlightIntensityIncConst = .02;
-  // increase sun's elevation as time passes
-  // Mutates: ELEVATION, SUNLIGHT.INTENSITY, and PHI. Note that elevation adjusts sunlight.intensity correctly only if both start at 0
+  // increase sun's sunElevation as time passes
+  // Mutates: sunElevation, SUNLIGHT.INTENSITY, and PHI. Note that sunElevation adjusts sunlight.intensity correctly only if both start at 0
   function updateSun() {  
-    phi = THREE.MathUtils.degToRad( 90 - elevation);    // update phi
+    phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // update phi
     sun.setFromSphericalCoords( 1, phi, theta);      // update sun vector's position
-    sunLight.position.copy(sun).multiplyScalar(10000); // sync sunLight directional light to sun vector's position
+    sunLight.position.copy(sun).multiplyScalar(1000000); // sync sunLight directional light to sun vector's position
     sky.material.uniforms['sunPosition'].value.copy(sun); // sync sky object's sun to sun vector's position
-    water.material.uniforms['sunDirection'].value.copy(sun).normalize();
-    if (elevation >= 0 && elevation <= 90) {    // sunrise - afternoon:
-        elevation += elevationIncConst;
+    water.material.uniforms['sunDirection'].value.copy(sun).normalize();    //sets shadows to follow sun's position
+
+    moonPhi = THREE.MathUtils.degToRad(90 - moonElevation);
+    moon.setFromSphericalCoords(1, moonPhi, moonTheta);   // use spherical coords to place moon in sky
+    moonLight.position.copy(moon).multiplyScalar(moonScale);
+    moonMesh.position.copy(moon).multiplyScalar(moonScale);
+
+    // TODO: Adjust water color with sun's position (current imp only changes shadows of water)
+    if (sunElevation >= 0 && sunElevation <= 90) {    // sunrise - afternoon:
+        sunElevation += sunElevationIncConst;
       if (sunLight.intensity < maxIntensity) {
-        sunLight.intensity += sunlightIntensityIncConst / 5;    // increase sun's intensity proportional to its elevation
+        sunLight.intensity += sunlightIntensityIncConst;    // increase sun's intensity proportional to its sunElevation
       }
     }
-    else if (elevation >= 90 && elevation <= 360) {  // afternoon - sunset:
-      elevation += elevationIncConst;  
+    else if (sunElevation >= 90 && sunElevation <= 360) {  // afternoon - sunset:
+      sunElevation += sunElevationIncConst;  
       if (sunLight.intensity > minIntensity) {
-        sunLight.intensity -= sunlightIntensityIncConst / 5;            // decrease sun's intensity proportional to its elevation
+        sunLight.intensity -= sunlightIntensityIncConst;            // decrease sun's intensity proportional to its sunElevation
       }
     } 
-    if (elevation >= 360) {                   // nighttime - sunrise: 
-      elevation = 0;                          // reset elevation 
+    if (sunElevation >= 360) {                   // nighttime - sunrise: 
+      sunElevation = 0;                          // reset sunElevation 
     }
+
+    moonElevation = 180 + sunElevation;
   }
 }
 
