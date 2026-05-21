@@ -183,6 +183,7 @@ async function init() {
 
 
   // WATER
+  const waterColors = {sunrise: new THREE.Color(0xff7f50), afternoon: new THREE.Color(0x30d5c8), night: new THREE.Color(0x000080)}; // #ff7f50 #30d5c8 #000080
   const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
   const waterNormalsPath =  './assets/waternormals.jpg';
   const water = new Water(
@@ -195,7 +196,7 @@ async function init() {
       } ),
       sunDirection: new THREE.Vector3(),
       sunColor: 0xffd8a8,
-      waterColor: 0x1e90ff,
+      waterColor: waterColors["sunrise"],
       distortionScale: 3.7,
       fog: scene.fog !== undefined
     }
@@ -316,8 +317,10 @@ async function init() {
 
   const maxIntensity = 5;
   const minIntensity = 0;
-  const sunElevationIncConst = .01;
+  const sunElevationIncConst = .1;
   const sunlightIntensityIncConst = .02;
+  let amount;
+  let waterColorLerp;
   // increase sun's sunElevation as time passes
   // Mutates: sunElevation, SUNLIGHT.INTENSITY, and PHI. Note that sunElevation adjusts sunlight.intensity correctly only if both start at 0
   function updateSun() {  
@@ -332,24 +335,58 @@ async function init() {
     moonLight.position.copy(moon).multiplyScalar(moonScale);
     moonMesh.position.copy(moon).multiplyScalar(moonScale);
 
-    // TODO: Adjust water color with sun's position (current imp only changes shadows of water)
-    if (sunElevation >= 0 && sunElevation <= 90) {    // sunrise - afternoon:
-        sunElevation += sunElevationIncConst;
+    sunElevation += sunElevationIncConst;   // update sun's position
+    amount = calcAmount(sunElevation);    // calc amount for lerp'ing water colors
+
+    if (sunElevation >= 0 && sunElevation < 90) {    // sunrise - afternoon:
+      lerpWaterColors(waterColors.sunrise, waterColors.afternoon, amount);
       if (sunLight.intensity < maxIntensity) {
         sunLight.intensity += sunlightIntensityIncConst;    // increase sun's intensity proportional to its sunElevation
       }
     }
-    else if (sunElevation >= 90 && sunElevation <= 360) {  // afternoon - sunset:
-      sunElevation += sunElevationIncConst;  
-      if (sunLight.intensity > minIntensity) {
+
+    else if (sunElevation >= 90 && sunElevation < 180) {  // afternoon - sunset:  
+      lerpWaterColors(waterColors.afternoon, waterColors.sunrise, amount);      if (sunLight.intensity > minIntensity) {
         sunLight.intensity -= sunlightIntensityIncConst;            // decrease sun's intensity proportional to its sunElevation
       }
     } 
+    else if (sunElevation >= 180 && sunElevation < 270) {
+      lerpWaterColors(waterColors.sunrise, waterColors.night, amount);
+    }
+    else if (sunElevation >= 270 && sunElevation < 360) {
+      lerpWaterColors(waterColors.night, waterColors.sunrise, amount);
+    }
     if (sunElevation >= 360) {                   // nighttime - sunrise: 
       sunElevation = 0;                          // reset sunElevation 
     }
 
     moonElevation = 180 + sunElevation;
+  }
+  
+  // given ELEVATION, calcs AMOUNT, a number in [0,1] used in lerp function
+  function calcAmount(elevation) {
+    if ((elevation - 270) >= 0) {    // sun at/past 270 deg (halfway through nighttime)
+      return (elevation - 270) / 90;
+    }
+    else if ((elevation - 180) >= 0) {   // sun at/past 180 deg (beginning nighttime)
+      return (elevation - 180) / 90;
+    }
+    else if ((elevation - 90) >= 0) {   // sun at/past 90 deg (afternoon begins)
+      return (elevation - 90) / 90;   // get fraction for lerp
+    }
+    else {
+      return elevation / 90;
+    }
+  }
+
+  // Given a COLOR in hex, set's water's waterColor property to COLOR
+  function lerpWaterColors(colorA, colorB, amount) {
+    waterColorLerp = water.material.uniforms.waterColor.value.lerpColors(colorA, colorB, amount);
+    // debug
+    console.log(
+      "colorA: ", colorA.getHex(), "colorB: ", colorB.getHex(), "amount: ", amount, 
+      "water actual color: ", water.material.uniforms.waterColor.value.getHex(), 
+      "lerp'd color: ", waterColorLerp.getHex());
   }
 }
 
