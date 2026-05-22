@@ -127,9 +127,9 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 0;   // updated in updateSun()
+  let sunElevation = 0;   // updated in updateSunAndWate()
   const azimuth = 180;
-  let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSun()
+  let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
   sun.setFromSphericalCoords( 1, phi, theta );  // use spherical coords to place sun in sky
 
@@ -176,14 +176,13 @@ async function init() {
   scene.add(moonMesh); 
   
   // AMBIENT LIGHT
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  const ambientLight = new THREE.AmbientLight(0xf69471, 0.4);   // #f69471 #ff7f50
   scene.add(ambientLight);
 
 
-
-
   // WATER
-  const waterColors = {sunrise: new THREE.Color(0xff7f50), afternoon: new THREE.Color(0x30d5c8), night: new THREE.Color(0x000080)}; // #ff7f50 #30d5c8 #000080
+  // #f49ac2  #30d5c8 #317ebd  #ff7f50 #000080
+  const waterColors = {sunrise: new THREE.Color(0xf49ac2), morning: new THREE.Color(0x30d5c8), afternoon: new THREE.Color(0x317ebd), sunset: new THREE.Color(0xff7f50), night: new THREE.Color(0x000080)}; // #ff7f50 #30d5c8 
   const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
   const waterNormalsPath =  './assets/waternormals.jpg';
   const water = new Water(
@@ -272,7 +271,7 @@ async function init() {
     const delta = timer.getDelta();
 
     //moonMaterial.side = THREE.FrontSide;
-    updateSun();
+    updateSunAndWater();
 
     // if player is grounded, don't apply gravity to it's movement
     if (characterController.computedGrounded()) {
@@ -318,12 +317,12 @@ async function init() {
   const maxIntensity = 5;
   const minIntensity = 0;
   const sunElevationIncConst = .1;
-  const sunlightIntensityIncConst = .02;
+  const sunlightIntensityIncConst = .01;
   let amount;
   let waterColorLerp;
   // increase sun's sunElevation as time passes
   // Mutates: sunElevation, SUNLIGHT.INTENSITY, and PHI. Note that sunElevation adjusts sunlight.intensity correctly only if both start at 0
-  function updateSun() {  
+  function updateSunAndWater() {  
     phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // update phi
     sun.setFromSphericalCoords( 1, phi, theta);      // update sun vector's position
     sunLight.position.copy(sun).multiplyScalar(1000000); // sync sunLight directional light to sun vector's position
@@ -338,24 +337,43 @@ async function init() {
     sunElevation += sunElevationIncConst;   // update sun's position
     amount = calcAmount(sunElevation);    // calc amount for lerp'ing water colors
 
+    console.log("sunElevation: ", sunElevation, "sunLight.intensity: ", sunLight.intensity);
     if (sunElevation >= 0 && sunElevation < 90) {    // sunrise - afternoon:
-      lerpWaterColors(waterColors.sunrise, waterColors.afternoon, amount);
       if (sunLight.intensity < maxIntensity) {
         sunLight.intensity += sunlightIntensityIncConst;    // increase sun's intensity proportional to its sunElevation
       }
+
+      if (sunElevation < 45) {    // sunrise - morning
+        lerpWaterColors(waterColors.sunrise, waterColors.morning, amount);
+      }
+      else {    //morning - afternoon
+        lerpWaterColors(waterColors.morning, waterColors.afternoon, amount);
+      }
+
     }
 
     else if (sunElevation >= 90 && sunElevation < 180) {  // afternoon - sunset:  
-      lerpWaterColors(waterColors.afternoon, waterColors.sunrise, amount);      if (sunLight.intensity > minIntensity) {
+      if (sunLight.intensity > minIntensity) {
+        sunLight.intensity -= sunlightIntensityIncConst;            // decrease sun's intensity proportional to its sunElevation
+      }
+
+      if (sunElevation >= 135) {
+        lerpWaterColors(waterColors.afternoon, waterColors.sunset, amount);      
+      }
+
+      if (sunLight.intensity > minIntensity) {
         sunLight.intensity -= sunlightIntensityIncConst;            // decrease sun's intensity proportional to its sunElevation
       }
     } 
+
     else if (sunElevation >= 180 && sunElevation < 270) {
-      lerpWaterColors(waterColors.sunrise, waterColors.night, amount);
+      lerpWaterColors(waterColors.sunset, waterColors.night, amount);
     }
+
     else if (sunElevation >= 270 && sunElevation < 360) {
       lerpWaterColors(waterColors.night, waterColors.sunrise, amount);
     }
+
     if (sunElevation >= 360) {                   // nighttime - sunrise: 
       sunElevation = 0;                          // reset sunElevation 
     }
@@ -363,30 +381,19 @@ async function init() {
     moonElevation = 180 + sunElevation;
   }
   
+  let interval = 45;    // interval (in deg) for changes to water color
   // given ELEVATION, calcs AMOUNT, a number in [0,1] used in lerp function
   function calcAmount(elevation) {
-    if ((elevation - 270) >= 0) {    // sun at/past 270 deg (halfway through nighttime)
-      return (elevation - 270) / 90;
-    }
-    else if ((elevation - 180) >= 0) {   // sun at/past 180 deg (beginning nighttime)
-      return (elevation - 180) / 90;
-    }
-    else if ((elevation - 90) >= 0) {   // sun at/past 90 deg (afternoon begins)
-      return (elevation - 90) / 90;   // get fraction for lerp
-    }
-    else {
-      return elevation / 90;
-    }
+    let wholeDivQuo = Math.floor(elevation/interval)
+    let decDivQuo = elevation / interval;
+    let rv =  (elevation / interval) - wholeDivQuo;
+    //console.log("el: ", elevation, "interval: ", interval, "floor div: ", wholeDivQuo, "decimal div: ", decDivQuo, "rv: ",rv);
+    return rv;
   }
 
   // Given a COLOR in hex, set's water's waterColor property to COLOR
   function lerpWaterColors(colorA, colorB, amount) {
     waterColorLerp = water.material.uniforms.waterColor.value.lerpColors(colorA, colorB, amount);
-    // debug
-    console.log(
-      "colorA: ", colorA.getHex(), "colorB: ", colorB.getHex(), "amount: ", amount, 
-      "water actual color: ", water.material.uniforms.waterColor.value.getHex(), 
-      "lerp'd color: ", waterColorLerp.getHex());
   }
 }
 
