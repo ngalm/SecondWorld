@@ -5,6 +5,7 @@ import { Sky } from 'three/addons/objects/Sky.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { SimplexNoise } from 'three/examples/jsm/Addons.js';
+import { min } from 'three/tsl';
 
 async function init() {
   // THREE SETUP: loader, scene, camera, and renderer
@@ -127,9 +128,9 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 0;   // updated in updateSun()
+  let sunElevation = 0;   // updated in updateSunAndWate()
   const azimuth = 180;
-  let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSun()
+  let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
   sun.setFromSphericalCoords( 1, phi, theta );  // use spherical coords to place sun in sky
 
@@ -147,7 +148,7 @@ async function init() {
 
   // MOON
   // Moon THREE vector
-  const moonScale = 90000;
+  const moonScale = 80000;
   const moon = new THREE.Vector3();
   let moonElevation = 180 + sunElevation;
   const moonAzimuth = 180;
@@ -157,7 +158,7 @@ async function init() {
 
   // Moon THREE Directional Light object
   let moonIntensity = 1;
-  const moonLight = new THREE.DirectionalLight(0xacacc1, moonIntensity);
+  const moonLight = new THREE.DirectionalLight(0x5c0909, moonIntensity);  // #9d9dbb #5c0909
   moonLight.position.set(moon.x, moon.y, moon.z).multiplyScalar(moonScale);
   scene.add(moonLight);
 
@@ -165,8 +166,8 @@ async function init() {
   const moonTexturePath = './assets/moon_texture.jpg';
   const moonTexture = textureLoader.load(moonTexturePath);
   const moonMaterial = new THREE.MeshStandardMaterial({
-      map: moonTexture,
-      emissive : 0x8a7f8d,
+      map: moonTexture, 
+      emissive : 0x5c0909,    // blood red moon
       emissiveIntensity : 2
   });
   const moonGeometry = new THREE.SphereGeometry(1000, 20, 20);
@@ -176,13 +177,13 @@ async function init() {
   scene.add(moonMesh); 
   
   // AMBIENT LIGHT
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  const ambientLight = new THREE.AmbientLight(0xe49e7b, 1);   // #e49e7b #ff7f50
   scene.add(ambientLight);
 
 
-
-
   // WATER
+  // #f49ac2  #30d5c8 #317ebd  #ff7f50 #000080 #90d5ff
+  const waterColors = {sunrise: new THREE.Color(0xf49ac2), morning: new THREE.Color(0x30d5c8), afternoon: new THREE.Color(0x90d5ff), sunset: new THREE.Color(0xff7f50), night: new THREE.Color(0x000080)}; 
   const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 );
   const waterNormalsPath =  './assets/waternormals.jpg';
   const water = new Water(
@@ -194,10 +195,10 @@ async function init() {
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
       } ),
       sunDirection: new THREE.Vector3(),
-      sunColor: 0xffd8a8,
-      waterColor: 0x1e90ff,
-      distortionScale: 3.7,
-      fog: scene.fog !== undefined
+      sunColor: 0xf9a033, // #f9a033
+      waterColor: waterColors["sunrise"],
+      distortionScale: 10,
+      fog: scene.fog !== undefined, 
     }
   );
   water.rotation.x = - Math.PI / 2;
@@ -271,7 +272,7 @@ async function init() {
     const delta = timer.getDelta();
 
     //moonMaterial.side = THREE.FrontSide;
-    updateSun();
+    updateSunAndWater();
 
     // if player is grounded, don't apply gravity to it's movement
     if (characterController.computedGrounded()) {
@@ -309,18 +310,21 @@ async function init() {
     const buoyancyFactor = Math.sin(2.5*time) * 0.0018;   
     if (pos.y <= waterLevel && pos.y >= -.4) { /// if player is in the water and not below map
       pos.y = pos.y + buoyancyFactor;
-      console.log("y position: ", pos.y);
     }
     return;
   }
 
   const maxIntensity = 5;
-  const minIntensity = 0;
-  const sunElevationIncConst = .01;
+  const minIntensity = 1;
+  const sunElevationIncConst = .05;
   const sunlightIntensityIncConst = .02;
+  let amountWaterColorLerp;    // for water color lerp
+  let amountSunIntenLerp;    // for sunlight intensity linear interpolation calc
+  let waterColorLerp;
+
   // increase sun's sunElevation as time passes
   // Mutates: sunElevation, SUNLIGHT.INTENSITY, and PHI. Note that sunElevation adjusts sunlight.intensity correctly only if both start at 0
-  function updateSun() {  
+  function updateSunAndWater() {  
     phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // update phi
     sun.setFromSphericalCoords( 1, phi, theta);      // update sun vector's position
     sunLight.position.copy(sun).multiplyScalar(1000000); // sync sunLight directional light to sun vector's position
@@ -332,24 +336,66 @@ async function init() {
     moonLight.position.copy(moon).multiplyScalar(moonScale);
     moonMesh.position.copy(moon).multiplyScalar(moonScale);
 
-    // TODO: Adjust water color with sun's position (current imp only changes shadows of water)
-    if (sunElevation >= 0 && sunElevation <= 90) {    // sunrise - afternoon:
-        sunElevation += sunElevationIncConst;
-      if (sunLight.intensity < maxIntensity) {
-        sunLight.intensity += sunlightIntensityIncConst;    // increase sun's intensity proportional to its sunElevation
+    sunElevation += sunElevationIncConst;   // update sun's position
+    moonElevation = 180 + sunElevation;     // update moon's position
+    amountWaterColorLerp = calcAmountForLerp(sunElevation, 45);    // calc amount for lerp'ing water colors
+    amountSunIntenLerp = calcAmountForLerp(sunElevation, 90);
+
+    // debugging:
+    // console.log("amountWaterLerp: ", amountWaterColorLerp);
+    // console.log("waterColor: ", water.material.uniforms.waterColor.value);
+    // console.log("sunElevation: ", sunElevation, "sunLight.intensity: ", sunLight.intensity);
+
+    if (sunElevation >= 0 && sunElevation < 90) {    // sunrise - afternoon:
+      sunLight.intensity = lerpSunLightIntensity(minIntensity, maxIntensity,  amountSunIntenLerp);
+
+      if (sunElevation < 45) {    // sunrise - morning
+        lerpWaterColors(waterColors.sunrise, waterColors.morning, amountWaterColorLerp);
       }
+      else {    //morning - afternoon
+        lerpWaterColors(waterColors.morning, waterColors.afternoon, amountWaterColorLerp);
+      }
+
     }
-    else if (sunElevation >= 90 && sunElevation <= 360) {  // afternoon - sunset:
-      sunElevation += sunElevationIncConst;  
-      if (sunLight.intensity > minIntensity) {
-        sunLight.intensity -= sunlightIntensityIncConst;            // decrease sun's intensity proportional to its sunElevation
-      }
-    } 
+
+    else if (sunElevation >= 90 && sunElevation < 180) {  // afternoon - sunset:  
+      sunLight.intensity = lerpSunLightIntensity(maxIntensity, minIntensity,  amountSunIntenLerp);
+
+      if (sunElevation >= 135) {
+        lerpWaterColors(waterColors.afternoon, waterColors.sunset, amountWaterColorLerp);      
+      } 
+    }
+
+    else if (sunElevation >= 180 && sunElevation < 225) {
+      lerpWaterColors(waterColors.sunset, waterColors.night, amountWaterColorLerp);
+    }
+
+    else if (sunElevation >= 315 && sunElevation < 360) {
+      lerpWaterColors(waterColors.night, waterColors.sunrise, amountWaterColorLerp);
+    }
+
     if (sunElevation >= 360) {                   // nighttime - sunrise: 
       sunElevation = 0;                          // reset sunElevation 
     }
+  }
+  
+    // interval (in deg) for changes to water color
+  // given ELEVATION of sun and INTERVAL in deg, calcs AMOUNT, a number in [0,1] used in lerp function
+  function calcAmountForLerp(elevation, interval) {
+    if (interval == 45){
+      console.log("elevation, interval: ", elevation, interval, "floor(elevation / interval): ",  Math.floor(elevation/interval));
+    }
+    return  ((elevation / interval) - Math.floor(elevation/interval));
+  }
 
-    moonElevation = 180 + sunElevation;
+  // Given a COLOR in hex, set's water's waterColor property to COLOR
+  function lerpWaterColors(colorA, colorB, amount) {
+    waterColorLerp = water.material.uniforms.waterColor.value.lerpColors(colorA, colorB, amount);
+  }
+
+  function lerpSunLightIntensity(a, b, amount) {
+    let rv = a + amount * (b - a);
+    return rv
   }
 }
 
