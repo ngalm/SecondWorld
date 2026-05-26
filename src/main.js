@@ -148,7 +148,7 @@ async function init() {
 
   // MOON
   // Moon THREE vector
-  const moonScale = 70000;
+  const moonScale = 80000;
   const moon = new THREE.Vector3();
   let moonElevation = 180 + sunElevation;
   const moonAzimuth = 180;
