@@ -163,17 +163,15 @@ async function init() {
   scene.add(moonLight);
 
   // Moon THREE Mesh object
-  const moonTexturePath = './assets/moon_texture.jpg';
+  const moonTexturePath = './assets/low_res_moon.jpeg';
   const moonTexture = textureLoader.load(moonTexturePath);
-  const moonMaterial = new THREE.MeshStandardMaterial({
+  const moonMaterial = new THREE.MeshBasicMaterial({
       map: moonTexture, 
-      emissive : 0x5c0909,    // blood red moon
-      emissiveIntensity : 2
+      color: 0xfe5757,    // blood red moon #fe5757
   });
   const moonGeometry = new THREE.SphereGeometry(1000, 20, 20);
   const moonMesh = new THREE.Mesh( moonGeometry, moonMaterial);
   moonMesh.position.set(moon.x, moon.y, moon.z).multiplyScalar(moonScale);
-  console.log("moon: ", moon, "moonMesh: ", moonMesh.position);
   scene.add(moonMesh); 
   
   // AMBIENT LIGHT
@@ -341,11 +339,6 @@ async function init() {
     amountWaterColorLerp = calcAmountForLerp(sunElevation, 45);    // calc amount for lerp'ing water colors
     amountSunIntenLerp = calcAmountForLerp(sunElevation, 90);
 
-    // debugging:
-    // console.log("amountWaterLerp: ", amountWaterColorLerp);
-    // console.log("waterColor: ", water.material.uniforms.waterColor.value);
-    // console.log("sunElevation: ", sunElevation, "sunLight.intensity: ", sunLight.intensity);
-
     if (sunElevation >= 0 && sunElevation < 90) {    // sunrise - afternoon:
       sunLight.intensity = lerpSunLightIntensity(minIntensity, maxIntensity,  amountSunIntenLerp);
 
@@ -382,9 +375,6 @@ async function init() {
     // interval (in deg) for changes to water color
   // given ELEVATION of sun and INTERVAL in deg, calcs AMOUNT, a number in [0,1] used in lerp function
   function calcAmountForLerp(elevation, interval) {
-    if (interval == 45){
-      console.log("elevation, interval: ", elevation, interval, "floor(elevation / interval): ",  Math.floor(elevation/interval));
-    }
     return  ((elevation / interval) - Math.floor(elevation/interval));
   }
 
