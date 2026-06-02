@@ -30,15 +30,26 @@ async function init() {
   const world = new RAPIER.World({ x: 0.0, y: -9.81, z: 0.0 });
 
   // SOUND
-  const soundPath = './sounds/ambient_ocean.mp3';
   const listener = new THREE.AudioListener();           // create an AudioListener and add it to the camera
-  camera.add( listener );                         
-  const sound = new THREE.Audio( listener );            // create a global audio source
+  camera.add( listener ); 
   const audioLoader = new THREE.AudioLoader();          // load a sound and set it as the Audio object's buffer
-  audioLoader.load( soundPath, function( buffer ) {
-    sound.setBuffer(buffer);
-    sound.setLoop(true);
-    sound.setVolume(0.1);
+
+  // OCEAN SOUND  
+  const oceanSoundPath = './sounds/ambient_ocean.mp3';                      
+  const oceanSound = new THREE.Audio( listener );            // create a global audio source
+  audioLoader.load( oceanSoundPath, function( buffer ) {
+    oceanSound.setBuffer(buffer);
+    oceanSound.setLoop(true);
+    oceanSound.setVolume(0.1);
+  });
+
+  // WALKING SOUND  
+  const walkingSoundPath = './sounds/ambient_ocean.mp3';                      
+  const walkingSound = new THREE.Audio( listener );            // create a global audio source
+  audioLoader.load( walkingSoundPath, function( buffer ) {
+    oceanSound.setBuffer(buffer);
+    oceanSound.setLoop(true);
+    oceanSound.setVolume(0.1);
   });
 
   // CONTROLS
@@ -53,7 +64,7 @@ async function init() {
 
   instructions.addEventListener( 'click', function () {
     controls.lock();                      // when user clicks inside 'instructions' html element, pointer is locked (camera controls are active)
-    if (!(sound.isPlaying)) sound.play(); // play sound once user interacts by clicking
+    if (!(oceanSound.isPlaying)) oceanSound.play(); // play sound once user interacts by clicking
   } );
 
   controls.addEventListener( 'lock', function () {
@@ -286,6 +297,13 @@ async function init() {
     // Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
 
+    if (currentPos.x != newPos.x && currentPos.y != newPos.y && currentPos.z != newPos.z) {
+      console.log("we are moving");
+      if (!inWater(newPos.y)) {
+
+      }
+    }
+  
     applyBuoyancy(newPos);
 
     playerRigidBody.setNextKinematicTranslation(newPos);
@@ -299,14 +317,19 @@ async function init() {
     renderer.render( scene, camera );
   }
 
-  /* takes in POS position vector and applys buoyancy lift to it  */
   const waterLevel = .4;
+  // given Y (an int vertical axis position value), returns boolean TRUE if Y is at or below WATERLEVEL
+  function inWater(y) {
+    const rv = y <= waterLevel;
+    return rv;
+  }
+
   function applyBuoyancy(pos) {
     // given POS position vector 
-    //  apply an upward lift to y comp (as long as it is submerged ?)
+    //  apply an upward lift to y comp 
     const time = timer.getElapsed();
     const buoyancyFactor = Math.sin(2.5*time) * 0.0018;   
-    if (pos.y <= waterLevel && pos.y >= -.4) { /// if player is in the water and not below map
+    if (inWater(pos.y) && pos.y >= -.4) { /// if player is in the water and not below map
       pos.y = pos.y + buoyancyFactor;
     }
     return;
