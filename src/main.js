@@ -43,6 +43,16 @@ async function init() {
     oceanSound.setVolume(0.1);
   });
 
+  // WALKING SOUND  
+  const walkingSoundPath = './sounds/footsteps_short.m4a';                      
+  const walkingSound = new THREE.Audio( listener );            // create a global audio source
+  audioLoader.load( walkingSoundPath, function( buffer ) {
+    walkingSound.setBuffer(buffer);
+    walkingSound.setLoop(true);
+    walkingSound.setVolume(0.3);
+    walkingSound.setPlaybackRate(2);
+  });
+
   // CONTROLS
   // Pointer Lock Camera Controls
   const controls = new PointerLockControls( camera, document.body );
@@ -250,7 +260,7 @@ async function init() {
     // Compute desired movement vector (based on input + camera)
     const move = new THREE.Vector3();
     if (controls.isLocked) {
-      const speed = 0.2;
+      const speed = 0.15;
 
       const forward = new THREE.Vector3();
       camera.getWorldDirection(forward);
@@ -287,6 +297,18 @@ async function init() {
     const corrected = characterController.computedMovement();
     // Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
+
+    if (moving(currentPos, newPos)) {
+      if (!inWater(newPos.y)) {
+        if (!(walkingSound.isPlaying)) walkingSound.play(); // play sound (if not already playing) when player is on the sand and moving 
+        console.log("walking noise");
+      }
+    }
+    else {
+      if (walkingSound.isPlaying) {
+        walkingSound.pause();   // pause sound (if playing) when player is not moving
+      }
+    }
   
     applyBuoyancy(newPos);
 
@@ -301,7 +323,14 @@ async function init() {
     renderer.render( scene, camera );
   }
 
-  const waterLevel = .4;
+  // given CUR a 3d vector representing current position and NEXT a 3d vector representing next position, 
+  //    returns boolean TRUE if x,y,z of CUR equals x,y,z of NEXT.
+  function moving(cur, next){
+    return cur.x != next.x && cur.y != next.y && cur.z != next.z;
+  }
+
+
+  const waterLevel = .4;    // used in inWater() !
   // given Y (an int vertical axis position value), returns boolean TRUE if Y is at or below WATERLEVEL
   function inWater(y) {
     const rv = y <= waterLevel;
