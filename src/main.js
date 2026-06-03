@@ -43,15 +43,6 @@ async function init() {
     oceanSound.setVolume(0.1);
   });
 
-  // WALKING SOUND  
-  const walkingSoundPath = './sounds/ambient_ocean.mp3';                      
-  const walkingSound = new THREE.Audio( listener );            // create a global audio source
-  audioLoader.load( walkingSoundPath, function( buffer ) {
-    oceanSound.setBuffer(buffer);
-    oceanSound.setLoop(true);
-    oceanSound.setVolume(0.1);
-  });
-
   // CONTROLS
   // Pointer Lock Camera Controls
   const controls = new PointerLockControls( camera, document.body );
@@ -296,13 +287,6 @@ async function init() {
     const corrected = characterController.computedMovement();
     // Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
-
-    if (currentPos.x != newPos.x && currentPos.y != newPos.y && currentPos.z != newPos.z) {
-      console.log("we are moving");
-      if (!inWater(newPos.y)) {
-
-      }
-    }
   
     applyBuoyancy(newPos);
 
