@@ -50,6 +50,7 @@ async function init() {
     walkingSound.setBuffer(buffer);
     walkingSound.setLoop(true);
     walkingSound.setVolume(0.3);
+    walkingSound.setPlaybackRate(2);
   });
 
   // CONTROLS
@@ -259,7 +260,7 @@ async function init() {
     // Compute desired movement vector (based on input + camera)
     const move = new THREE.Vector3();
     if (controls.isLocked) {
-      const speed = 0.2;
+      const speed = 0.15;
 
       const forward = new THREE.Vector3();
       camera.getWorldDirection(forward);
