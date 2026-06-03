@@ -44,12 +44,12 @@ async function init() {
   });
 
   // WALKING SOUND  
-  const walkingSoundPath = './sounds/ambient_ocean.mp3';                      
+  const walkingSoundPath = './sounds/footsteps_short.m4a';                      
   const walkingSound = new THREE.Audio( listener );            // create a global audio source
   audioLoader.load( walkingSoundPath, function( buffer ) {
-    oceanSound.setBuffer(buffer);
-    oceanSound.setLoop(true);
-    oceanSound.setVolume(0.1);
+    walkingSound.setBuffer(buffer);
+    walkingSound.setLoop(true);
+    walkingSound.setVolume(0.3);
   });
 
   // CONTROLS
@@ -297,10 +297,15 @@ async function init() {
     // Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
 
-    if (currentPos.x != newPos.x && currentPos.y != newPos.y && currentPos.z != newPos.z) {
-      console.log("we are moving");
+    if (moving(currentPos, newPos)) {
       if (!inWater(newPos.y)) {
-
+        if (!(walkingSound.isPlaying)) walkingSound.play(); // play sound (if not already playing) when player is on the sand and moving 
+        console.log("walking noise");
+      }
+    }
+    else {
+      if (walkingSound.isPlaying) {
+        walkingSound.pause();   // pause sound (if playing) when player is not moving
       }
     }
   
@@ -317,7 +322,14 @@ async function init() {
     renderer.render( scene, camera );
   }
 
-  const waterLevel = .4;
+  // given CUR a 3d vector representing current position and NEXT a 3d vector representing next position, 
+  //    returns boolean TRUE if x,y,z of CUR equals x,y,z of NEXT.
+  function moving(cur, next){
+    return cur.x != next.x && cur.y != next.y && cur.z != next.z;
+  }
+
+
+  const waterLevel = .4;    // used in inWater() !
   // given Y (an int vertical axis position value), returns boolean TRUE if Y is at or below WATERLEVEL
   function inWater(y) {
     const rv = y <= waterLevel;
