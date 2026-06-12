@@ -53,6 +53,17 @@ async function init() {
     walkingSound.setPlaybackRate(2);
   });
 
+
+  // ATMOSPHERIC MUSIC  
+  const atmoMusicPath = 'public/sounds/secondworld_music_moon_melancholy_2.wav';                      
+  const atmoMusic = new THREE.Audio( listener );            // create a global audio source
+  audioLoader.load( atmoMusicPath, function( buffer ) {
+    atmoMusic.setBuffer(buffer);
+    atmoMusic.setLoop(false);
+    atmoMusic.setVolume(0.9);
+    atmoMusic.setPlaybackRate(1);
+  });
+
   // CONTROLS
   // Pointer Lock Camera Controls
   const controls = new PointerLockControls( camera, document.body );
@@ -140,7 +151,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 0;   // updated in updateSunAndWate()
+  let sunElevation = 150;   // updated in updateSunAndWate()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -320,6 +331,13 @@ async function init() {
     // animate water
     water.material.uniforms[ 'time' ].value += 1.0 / 360.0;   
     
+    // music 
+    if (sunElevation > 173) {
+      if(!atmoMusic.isPlaying) {
+        atmoMusic.play();
+        console.log("music start");
+      }
+    }
     renderer.render( scene, camera );
   }
 
@@ -350,7 +368,7 @@ async function init() {
 
   const maxIntensity = 5;
   const minIntensity = 1;
-  const sunElevationIncConst = .05;
+  const sunElevationIncConst = .03;
   const sunlightIntensityIncConst = .02;
   let amountWaterColorLerp;    // for water color lerp
   let amountSunIntenLerp;    // for sunlight intensity linear interpolation calc
