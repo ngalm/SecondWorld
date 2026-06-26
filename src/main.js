@@ -140,7 +140,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 0;   // updated in updateSunAndWate()
+  let sunElevation = 160;   // updated in updateSunAndWate()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -148,7 +148,7 @@ async function init() {
 
   //Sun THREE Directional Light object
   let sunIntensity = 0;
-  const sunLight = new THREE.DirectionalLight(0xffd8a8, sunIntensity);
+  const sunLight = new THREE.DirectionalLight(0xffd8a8, sunIntensity); 
   sunLight.position.set(sun.x, sun.y, sun.z);    // attach sunLight directional light to the sun vector
   scene.add(sunLight);
 
@@ -349,9 +349,8 @@ async function init() {
   }
 
   const maxIntensity = 5;
-  const minIntensity = 1;
-  const sunElevationIncConst = .05;
-  const sunlightIntensityIncConst = .02;
+  const minIntensity = 0;
+  const sunElevationIncConst = .03;
   let amountWaterColorLerp;    // for water color lerp
   let amountSunIntenLerp;    // for sunlight intensity linear interpolation calc
   let waterColorLerp;
