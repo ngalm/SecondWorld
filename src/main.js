@@ -135,12 +135,10 @@ async function init() {
       renderer.setAnimationLoop( animate );
   });
 
-
-
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 150;   // updated in updateSunAndWate()
+  let sunElevation = 170;   // updated in updateSunAndWate()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -173,7 +171,7 @@ async function init() {
 
   // Moon THREE Directional Light object
   let moonIntensity = 1;
-  const moonLight = new THREE.DirectionalLight(0x5c0909, moonIntensity);  // #9d9dbb #5c0909
+  const moonLight = new THREE.DirectionalLight(0x5c0909, moonIntensity);  // #9d9dbb #5c0909 #317ebd
   moonLight.position.set(moon.x, moon.y, moon.z).multiplyScalar(moonScale);
   scene.add(moonLight);
 
@@ -192,7 +190,6 @@ async function init() {
   // AMBIENT LIGHT
   const ambientLight = new THREE.AmbientLight(0xe49e7b, 1);   // #e49e7b #ff7f50
   scene.add(ambientLight);
-
 
 
   // WATER
