@@ -367,7 +367,8 @@ async function init() {
   }
 
   const maxIntensity = 5;
-  const minIntensity = 1;
+  const midIntensity = 2;
+  const minIntensity = 0;
   const sunElevationIncConst = .03;
   const sunlightIntensityIncConst = .02;
   let amountWaterColorLerp;    // for water color lerp
