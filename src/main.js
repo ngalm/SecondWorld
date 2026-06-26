@@ -18,7 +18,7 @@ async function init() {
   renderer.setSize( window.innerWidth, window.innerHeight );
   // render settings for sun in SKY
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.5;
+  renderer.toneMappingExposure = .5;
   renderer.outputColorSpace = THREE.SRGBColorSpace;        
   renderer.setPixelRatio(window.devicePixelRatio);
 
@@ -140,7 +140,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 0;   // updated in updateSunAndWate()
+  let sunElevation = 150;   // updated in updateSunAndWate()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -157,6 +157,9 @@ async function init() {
   sky.scale.setScalar(450000);
   scene.add(sky);
   sky.material.uniforms['sunPosition'].value.copy(sun); // tell sky where sun is
+  sky.material.uniforms['rayleigh'].value = 2;        // default starting value
+  sky.material.uniforms['turbidity'].value = 1;       // Lower = darker, less hazy sky
+  sky.material.uniforms['mieCoefficient'].value = .009; // Lower = less haze/particle glow
 
   // MOON
   // Moon THREE vector
@@ -189,6 +192,7 @@ async function init() {
   // AMBIENT LIGHT
   const ambientLight = new THREE.AmbientLight(0xe49e7b, 1);   // #e49e7b #ff7f50
   scene.add(ambientLight);
+
 
 
   // WATER
@@ -349,7 +353,7 @@ async function init() {
   }
 
   const maxIntensity = 5;
-  const minIntensity = 0;
+  const minIntensity = 1;
   const sunElevationIncConst = .03;
   let amountWaterColorLerp;    // for water color lerp
   let amountSunIntenLerp;    // for sunlight intensity linear interpolation calc
@@ -378,6 +382,12 @@ async function init() {
       sunLight.intensity = lerpSunLightIntensity(minIntensity, maxIntensity,  amountSunIntenLerp);
 
       if (sunElevation < 45) {    // sunrise - morning
+        if (sunElevation < 20) {
+          if (sky.material.uniforms['rayleigh'].value > 2) {
+            sky.material.uniforms['rayleigh'].value -= .03;        // decrease light scattering as sun rises
+            console.log("elevation: ", sunElevation, "sky rayleigh: ",  sky.material.uniforms['rayleigh'].value);
+          } 
+        }
         lerpWaterColors(waterColors.sunrise, waterColors.morning, amountWaterColorLerp);
       }
       else {    //morning - afternoon
@@ -388,21 +398,41 @@ async function init() {
 
     else if (sunElevation >= 90 && sunElevation < 180) {  // afternoon - sunset:  
       sunLight.intensity = lerpSunLightIntensity(maxIntensity, minIntensity,  amountSunIntenLerp);
-
       if (sunElevation >= 135) {
-        lerpWaterColors(waterColors.afternoon, waterColors.sunset, amountWaterColorLerp);      
-      } 
+        lerpWaterColors(waterColors.afternoon, waterColors.sunset, amountWaterColorLerp);  
+        if (sunElevation > 170) {
+          if (sky.material.uniforms['rayleigh'].value < 8) {
+            sky.material.uniforms['rayleigh'].value += .03;        // increase light scattering as sun sets
+            console.log("elevation: ", sunElevation, "sky rayleigh: ",  sky.material.uniforms['rayleigh'].value);
+          } 
+        }    
+      }
     }
 
     else if (sunElevation >= 180 && sunElevation < 225) {
+      if (sunLight.intensity > 0) {   // rapidly decrease sunlight's intensity after sunset
+        sunLight.intensity -= .01;
+      }
       lerpWaterColors(waterColors.sunset, waterColors.night, amountWaterColorLerp);
+      if (sunElevation < 190) {
+        if (sky.material.uniforms['rayleigh'].value > 2) {
+          sky.material.uniforms['rayleigh'].value -= .1;        // rapidly decrease light scattering for night light
+          console.log("elevation: ", sunElevation, "sky rayleigh: ",  sky.material.uniforms['rayleigh'].value);
+        } 
+      } 
     }
 
     else if (sunElevation >= 315 && sunElevation < 360) {
       lerpWaterColors(waterColors.night, waterColors.sunrise, amountWaterColorLerp);
+      if (sunElevation > 350) {
+        if (sky.material.uniforms['rayleigh'].value < 8) {
+          sky.material.uniforms['rayleigh'].value += .03;        // increase light scattering for sunrise
+          console.log("elevation: ", sunElevation, "sky rayleigh: ",  sky.material.uniforms['rayleigh'].value);
+      } 
+    }
     }
 
-    if (sunElevation >= 360) {                   // nighttime - sunrise: 
+    else if (sunElevation >= 360) {                   // nighttime - sunrise: 
       sunElevation = 0;                          // reset sunElevation 
     }
   }
