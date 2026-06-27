@@ -55,7 +55,7 @@ async function init() {
 
 
   // ATMOSPHERIC MUSIC  
-  const atmoMusicPath = 'public/sounds/secondworld_music_moon_melancholy_2.wav';                      
+  const atmoMusicPath = './sounds/secondworld_music_moon_melancholy_2.wav';                      
   const atmoMusic = new THREE.Audio( listener );            // create a global audio source
   audioLoader.load( atmoMusicPath, function( buffer ) {
     atmoMusic.setBuffer(buffer);
