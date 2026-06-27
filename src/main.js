@@ -149,7 +149,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 320;   // updated in updateSunAndWate()
+  let sunElevation = 90;   // updated in updateSunAndWate()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -333,7 +333,7 @@ async function init() {
     water.material.uniforms[ 'time' ].value += 1.0 / 360.0;   
     
     // music 
-    if (sunElevation > 173) {
+    if (sunElevation > 173 && sunElevation < 180) {
       if(!atmoMusic.isPlaying) {
         atmoMusic.play();
         console.log("music start");
