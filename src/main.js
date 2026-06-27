@@ -389,7 +389,13 @@ async function init() {
     moonLight.position.copy(moon).multiplyScalar(moonScale);
     moonMesh.position.copy(moon).multiplyScalar(moonScale);
   
-    sunElevation += sunElevationIncConst;   // update sun's position
+    if ((sunElevation >= 0 && sunElevation < 4) || (sunElevation >= 177 && sunElevation < 180) || (sunElevation > 359)) {
+      sunElevation += (sunElevationIncConst - .02);   // update sun's position slowly at sunrise and sunset
+      console.log("sunrise or sunset. Sun elevation: ", sunElevation)
+    } 
+    else {
+      sunElevation += sunElevationIncConst;   // update sun's position normally
+    }
     moonElevation = 180 + sunElevation;     // update moon's position
     amountWaterColorLerp = calcAmountForLerp(sunElevation, 45);    // calc amount for lerp'ing water colors
     amountSunIntenLerp = calcAmountForLerp(sunElevation, 90);
@@ -401,7 +407,6 @@ async function init() {
         if (sunElevation < 20) {
           if (sky.material.uniforms['rayleigh'].value > 2) {
             sky.material.uniforms['rayleigh'].value -= .03;        // decrease light scattering as sun rises
-            console.log("elevation: ", sunElevation, "sky rayleigh: ",  sky.material.uniforms['rayleigh'].value);
           } 
         }
         lerpWaterColors(waterColors.sunrise, waterColors.morning, amountWaterColorLerp);
@@ -419,7 +424,6 @@ async function init() {
         if (sunElevation > 170) {
           if (sky.material.uniforms['rayleigh'].value < 8) {
             sky.material.uniforms['rayleigh'].value += .03;        // increase light scattering as sun sets
-            console.log("elevation: ", sunElevation, "sky rayleigh: ",  sky.material.uniforms['rayleigh'].value);
           } 
         }    
       }
@@ -433,7 +437,6 @@ async function init() {
       if (sunElevation < 190) {
         if (sky.material.uniforms['rayleigh'].value > 2) {
           sky.material.uniforms['rayleigh'].value -= .1;        // rapidly decrease light scattering for night light
-          console.log("elevation: ", sunElevation, "sky rayleigh: ",  sky.material.uniforms['rayleigh'].value);
         } 
       } 
     }
@@ -443,7 +446,6 @@ async function init() {
       if (sunElevation > 353) {
         if (sky.material.uniforms['rayleigh'].value < 8) {
           sky.material.uniforms['rayleigh'].value += .03;        // increase light scattering for sunrise
-          console.log("elevation: ", sunElevation, "sky rayleigh: ",  sky.material.uniforms['rayleigh'].value);
       } 
     }
     }
