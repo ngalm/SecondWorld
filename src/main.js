@@ -138,7 +138,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 170;   // updated in updateSunAndWate()
+  let sunElevation = 320;   // updated in updateSunAndWate()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -369,7 +369,7 @@ async function init() {
     moon.setFromSphericalCoords(1, moonPhi, moonTheta);   // use spherical coords to place moon in sky
     moonLight.position.copy(moon).multiplyScalar(moonScale);
     moonMesh.position.copy(moon).multiplyScalar(moonScale);
-
+  
     sunElevation += sunElevationIncConst;   // update sun's position
     moonElevation = 180 + sunElevation;     // update moon's position
     amountWaterColorLerp = calcAmountForLerp(sunElevation, 45);    // calc amount for lerp'ing water colors
@@ -421,7 +421,7 @@ async function init() {
 
     else if (sunElevation >= 315 && sunElevation < 360) {
       lerpWaterColors(waterColors.night, waterColors.sunrise, amountWaterColorLerp);
-      if (sunElevation > 350) {
+      if (sunElevation > 353) {
         if (sky.material.uniforms['rayleigh'].value < 8) {
           sky.material.uniforms['rayleigh'].value += .03;        // increase light scattering for sunrise
           console.log("elevation: ", sunElevation, "sky rayleigh: ",  sky.material.uniforms['rayleigh'].value);
