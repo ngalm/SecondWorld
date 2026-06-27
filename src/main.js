@@ -53,6 +53,17 @@ async function init() {
     walkingSound.setPlaybackRate(2);
   });
 
+
+  // ATMOSPHERIC MUSIC  
+  const atmoMusicPath = 'public/sounds/secondworld_music_moon_melancholy_2.wav';                      
+  const atmoMusic = new THREE.Audio( listener );            // create a global audio source
+  audioLoader.load( atmoMusicPath, function( buffer ) {
+    atmoMusic.setBuffer(buffer);
+    atmoMusic.setLoop(false);
+    atmoMusic.setVolume(0.7);
+    atmoMusic.setPlaybackRate(1);
+  });
+
   // CONTROLS
   // Pointer Lock Camera Controls
   const controls = new PointerLockControls( camera, document.body );
@@ -138,7 +149,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 320;   // updated in updateSunAndWate()
+  let sunElevation = 150;   // updated in updateSunAndWate()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -321,6 +332,13 @@ async function init() {
     // animate water
     water.material.uniforms[ 'time' ].value += 1.0 / 360.0;   
     
+    // music 
+    if (sunElevation > 173 && sunElevation < 180) {
+      if(!atmoMusic.isPlaying) {
+        atmoMusic.play();
+        console.log("music start");
+      }
+    }
     renderer.render( scene, camera );
   }
 
@@ -349,9 +367,10 @@ async function init() {
     return;
   }
 
-  const maxIntensity = 5;
+  const maxIntensity = 4;
   const minIntensity = 1;
   const sunElevationIncConst = .03;
+  const sunlightIntensityIncConst = .02;
   let amountWaterColorLerp;    // for water color lerp
   let amountSunIntenLerp;    // for sunlight intensity linear interpolation calc
   let waterColorLerp;
@@ -370,8 +389,8 @@ async function init() {
     moonLight.position.copy(moon).multiplyScalar(moonScale);
     moonMesh.position.copy(moon).multiplyScalar(moonScale);
   
-    if ((sunElevation >= 0 && sunElevation < 4) || (sunElevation >= 177 && sunElevation < 180) || (sunElevation > 359)) {
-      sunElevation += (sunElevationIncConst - .02);   // update sun's position slowly at sunrise and sunset
+    if ((sunElevation >= 0 && sunElevation < 4) || (sunElevation >= 177 && sunElevation < 183) || (sunElevation > 359)) {
+      sunElevation += (sunElevationIncConst - .021);   // update sun's position slowly at sunrise and sunset
       console.log("sunrise or sunset. Sun elevation: ", sunElevation)
     } 
     else {
@@ -382,7 +401,14 @@ async function init() {
     amountSunIntenLerp = calcAmountForLerp(sunElevation, 90);
 
     if (sunElevation >= 0 && sunElevation < 90) {    // sunrise - afternoon:
-      sunLight.intensity = lerpSunLightIntensity(minIntensity, maxIntensity,  amountSunIntenLerp);
+      if (sunElevation < 2) {   // sun intensity gradual change from 0-1
+        amountSunIntenLerp = calcAmountForLerp(sunElevation, 2);
+        sunLight.intensity = lerpSunLightIntensity(0, 1,  amountSunIntenLerp);
+      } 
+      else {                    // sun intensity gradual change from 1-4
+        amountSunIntenLerp = calcAmountForLerp(sunElevation, 90);
+        sunLight.intensity = lerpSunLightIntensity(minIntensity, maxIntensity,  amountSunIntenLerp);
+      }
 
       if (sunElevation < 45) {    // sunrise - morning
         if (sunElevation < 20) {
@@ -398,7 +424,7 @@ async function init() {
 
     }
 
-    else if (sunElevation >= 90 && sunElevation < 180) {  // afternoon - sunset:  
+    else if (sunElevation >= 90 && sunElevation < 180) {  // afternoon - sunset:  )
       sunLight.intensity = lerpSunLightIntensity(maxIntensity, minIntensity,  amountSunIntenLerp);
       if (sunElevation >= 135) {
         lerpWaterColors(waterColors.afternoon, waterColors.sunset, amountWaterColorLerp);  
@@ -417,8 +443,10 @@ async function init() {
       lerpWaterColors(waterColors.sunset, waterColors.night, amountWaterColorLerp);
       if (sunElevation < 190) {
         if (sky.material.uniforms['rayleigh'].value > 2) {
-          sky.material.uniforms['rayleigh'].value -= .1;        // rapidly decrease light scattering for night light
+          sky.material.uniforms['rayleigh'].value -= .06;        // rapidly decrease light scattering for night light
         } 
+        console.log("rayleigh: ", sky.material.uniforms['rayleigh'].value);
+
       } 
     }
 
