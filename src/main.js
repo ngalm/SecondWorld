@@ -36,7 +36,7 @@ async function init() {
 
   // OCEAN SOUND  
   const oceanSoundPath = './sounds/ambient_ocean.mp3';                      
-  const oceanSound = new THREE.Audio( listener );            // create a global audio source
+  const oceanSound = new THREE.Audio( listener );           
   audioLoader.load( oceanSoundPath, function( buffer ) {
     oceanSound.setBuffer(buffer);
     oceanSound.setLoop(true);
@@ -45,7 +45,7 @@ async function init() {
 
   // WALKING SOUND  
   const walkingSoundPath = './sounds/footsteps_short.m4a';                      
-  const walkingSound = new THREE.Audio( listener );            // create a global audio source
+  const walkingSound = new THREE.Audio( listener );            
   audioLoader.load( walkingSoundPath, function( buffer ) {
     walkingSound.setBuffer(buffer);
     walkingSound.setLoop(true);
@@ -53,16 +53,44 @@ async function init() {
     walkingSound.setPlaybackRate(2);
   });
 
-
   // ATMOSPHERIC MUSIC  
+  //  plays nighttime-dusk
   const atmoMusicPath = './sounds/secondworld_music_moon_melancholy_2.wav';                      
-  const atmoMusic = new THREE.Audio( listener );            // create a global audio source
+  const atmoMusic = new THREE.Audio( listener );            
   audioLoader.load( atmoMusicPath, function( buffer ) {
     atmoMusic.setBuffer(buffer);
     atmoMusic.setLoop(false);
     atmoMusic.setVolume(0.7);
-    atmoMusic.setPlaybackRate(1);
   });
+
+  // FAIRY WIND SOUND
+  //  plays nighttime
+  const fairyWindSoundPath = './sounds/fairy_wind2.wav';    // fairy_wind2 is a low freq white noise/wave-like sound
+  const fairyWindSound = new THREE.Audio( listener);
+  audioLoader.load(fairyWindSoundPath, function(buffer) {
+    fairyWindSound.setBuffer(buffer);
+    fairyWindSound.setLoop(false);
+    fairyWindSound.setVolume(.5);
+  })
+
+    // FAIRY TALK SOUND
+    //  plays sunrise
+  const fairyTalk1SoundPath = './sounds/fairy_talk1.wav';    // fairy_talk1 is short glittery burst
+  const fairyTalk1Sound = new THREE.Audio( listener);
+  audioLoader.load(fairyTalk1SoundPath, function(buffer) {
+    fairyTalk1Sound.setBuffer(buffer);
+    fairyTalk1Sound.setLoop(false);
+    fairyTalk1Sound.setVolume(.5);
+  })
+
+  //  plays midday
+  const fairyTalk2SoundPath = './sounds/fairy_talk2.wav';    // fairy_talk2 is longer glittery rolling
+  const fairyTalk2Sound = new THREE.Audio( listener);
+  audioLoader.load(fairyTalk2SoundPath, function(buffer) {
+    fairyTalk2Sound.setBuffer(buffer);
+    fairyTalk2Sound.setLoop(false);
+    fairyTalk2Sound.setVolume(.5);
+  })
 
   // CONTROLS
   // Pointer Lock Camera Controls
@@ -149,7 +177,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 150;   // updated in updateSunAndWate()
+  let sunElevation = 80;   // updated in updateSunAndWate()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -321,7 +349,12 @@ async function init() {
         walkingSound.pause();   // pause sound (if playing) when player is not moving
       }
     }
-  
+
+    playSound(fairyTalk1Sound, 0);
+    playSound(fairyTalk2Sound, 90);
+    playSound(atmoMusic, 173);
+    playSound(fairyWindSound, 180);
+    
     applyBuoyancy(newPos);
 
     playerRigidBody.setNextKinematicTranslation(newPos);
@@ -331,15 +364,19 @@ async function init() {
 
     // animate water
     water.material.uniforms[ 'time' ].value += 1.0 / 360.0;   
-    
-    // music 
-    if (sunElevation > 173 && sunElevation < 180) {
-      if(!atmoMusic.isPlaying) {
-        atmoMusic.play();
-        console.log("music start");
+
+    renderer.render( scene, camera );
+  }
+
+  // given SOUND, a THREE sound object, and CUE, the degree of the sun when the sound should play,
+  //    plays the sound if at the cue and not already playing
+  function playSound(sound, cue) {
+    if (sunElevation >= cue && sunElevation < (cue + 1)) {
+      if(!sound.isPlaying) {
+        sound.play();
+        console.log("sound start at elevation with cue: ", sunElevation, cue);
       }
     }
-    renderer.render( scene, camera );
   }
 
   // given CUR a 3d vector representing current position and NEXT a 3d vector representing next position, 
@@ -391,7 +428,6 @@ async function init() {
   
     if ((sunElevation >= 0 && sunElevation < 4) || (sunElevation >= 177 && sunElevation < 183) || (sunElevation > 359)) {
       sunElevation += (sunElevationIncConst - .021);   // update sun's position slowly at sunrise and sunset
-      console.log("sunrise or sunset. Sun elevation: ", sunElevation)
     } 
     else {
       sunElevation += sunElevationIncConst;   // update sun's position normally
@@ -445,8 +481,6 @@ async function init() {
         if (sky.material.uniforms['rayleigh'].value > 2) {
           sky.material.uniforms['rayleigh'].value -= .06;        // rapidly decrease light scattering for night light
         } 
-        console.log("rayleigh: ", sky.material.uniforms['rayleigh'].value);
-
       } 
     }
 
