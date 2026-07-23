@@ -338,6 +338,7 @@ async function init() {
     // Apply corrected movement
     const newPos = {x: currentPos.x + corrected.x, y: currentPos.y + corrected.y, z: currentPos.z + corrected.z};
 
+    //play walking sound
     if (moving(currentPos, newPos)) {
       if (!inWater(newPos.y)) {
         if (!(walkingSound.isPlaying)) walkingSound.play(); // play sound (if not already playing) when player is on the sand and moving 
