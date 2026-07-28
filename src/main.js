@@ -99,7 +99,7 @@ async function init() {
   audioLoader.load(aMajChordSoundPath, function(buffer) {
     aMajChordSound.setBuffer(buffer);
     aMajChordSound.setLoop(false);
-    aMajChordSound.setVolume(.35);
+    aMajChordSound.setVolume(.4);
   })
 
   // MORNING BIRDS SOUND
