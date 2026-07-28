@@ -94,7 +94,7 @@ async function init() {
 
   // ASCEND AMAJ CHORD SOUND
   //  plays right before sunrise
-  const aMajChordSoundPath = './sounds/ascendAMajChord.wav';  // ascending fluttering brass reverb AMaj chord
+  const aMajChordSoundPath = './sounds/acendAMajChord3.wav';  // ascending fluttering brass reverb AMaj chord
   const aMajChordSound = new THREE.Audio( listener);
   audioLoader.load(aMajChordSoundPath, function(buffer) {
     aMajChordSound.setBuffer(buffer);
@@ -372,7 +372,7 @@ async function init() {
     }
 
     playSound(morningBirdSound, 355);
-    playSound(aMajChordSound, 359);
+    playSound(aMajChordSound, 355);
     playSound(fairyTalk1Sound, 0);
     playSound(fairyTalk1Sound, 8);
     playSound(fairyTalk2Sound, 90);
