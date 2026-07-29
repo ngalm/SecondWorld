@@ -73,8 +73,8 @@ async function init() {
     fairyWindSound.setVolume(.5);
   })
 
-    // FAIRY TALK SOUND
-    //  plays sunrise
+  // FAIRY TALK SOUND
+  //  plays sunrise
   const fairyTalk1SoundPath = './sounds/fairy_talk1.wav';    // fairy_talk1 is short glittery burst
   const fairyTalk1Sound = new THREE.Audio( listener);
   audioLoader.load(fairyTalk1SoundPath, function(buffer) {
@@ -90,6 +90,26 @@ async function init() {
     fairyTalk2Sound.setBuffer(buffer);
     fairyTalk2Sound.setLoop(false);
     fairyTalk2Sound.setVolume(.5);
+  })
+
+  // ASCEND AMAJ CHORD SOUND
+  //  plays right before sunrise
+  const aMajChordSoundPath = './sounds/acendAMajChord3.wav';  // ascending fluttering brass reverb AMaj chord
+  const aMajChordSound = new THREE.Audio( listener);
+  audioLoader.load(aMajChordSoundPath, function(buffer) {
+    aMajChordSound.setBuffer(buffer);
+    aMajChordSound.setLoop(false);
+    aMajChordSound.setVolume(.4);
+  })
+
+  // MORNING BIRDS SOUND
+  //  plays before sunrise
+  const morningBirdsSoundPath = './sounds/morningBirdsFX-001.wav';
+  const morningBirdSound = new THREE.Audio( listener);
+  audioLoader.load(morningBirdsSoundPath, function(buffer) {
+    morningBirdSound.setBuffer(buffer);
+    morningBirdSound.setLoop(false);
+    morningBirdSound.setVolume(.4);
   })
 
   // CONTROLS
@@ -177,7 +197,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 80;   // updated in updateSunAndWate()
+  let sunElevation = 350;   // updated in updateSunAndWate()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -351,7 +371,10 @@ async function init() {
       }
     }
 
+    playSound(morningBirdSound, 355);
+    playSound(aMajChordSound, 355);
     playSound(fairyTalk1Sound, 0);
+    playSound(fairyTalk1Sound, 8);
     playSound(fairyTalk2Sound, 90);
     playSound(atmoMusic, 173);
     playSound(fairyWindSound, 180);
