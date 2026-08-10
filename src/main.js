@@ -197,7 +197,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 170;   // updated in updateSunAndWate()
+  let sunElevation = 350;   // updated in updateSunAndWate()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -371,12 +371,12 @@ async function init() {
       }
     }
 
-    playSound(morningBirdSound, 355);
-    playSound(aMajChordSound, 355);
+    playSound(morningBirdSound, 358);
+    playSound(aMajChordSound, 357);
     playSound(fairyTalk1Sound, 0);
     playSound(fairyTalk1Sound, 8);
     playSound(fairyTalk2Sound, 90);
-    playSound(atmoMusic, 173);
+    playSound(atmoMusic, 176);
     playSound(fairyWindSound, 180);
     
     applyBuoyancy(newPos);
@@ -539,48 +539,58 @@ async function init() {
     let amount;
     let rv;
 
-    if (elevation >=0 && elevation <=10) {   // 10 deg, SPEED UP
-      amount = calcAmountForLerp(elevation, 10);
-      rv = lerp(verySlow, slow, amount);
-    }
-    else if (elevation >10 && elevation <=30) { // 20 deg SPEED UP
-      amount = calcAmountForLerp(elevation, 20);
-      rv = lerp(slow, mid, amount);
-    }
-    else if (elevation >30 && elevation<=90) {  // 60 deg SPEED UP
-      amount = calcAmountForLerp(elevation, 60);
-      rv = lerp(mid, fast, amount);
-    }
-    else if (elevation >90 && elevation<=150) { // 60 deg SLOW DOWN
-      amount = calcAmountForLerp(elevation, 60);
-      rv = lerp(fast, mid, amount);
-    }
-    else if (elevation >160 && elevation<=170) {  // 20 deg SLOW DOWN
-      amount = calcAmountForLerp(elevation, 10);
-      rv = lerp(mid, slow, amount);
-    }
-    else if (elevation >170 && elevation<=180) {  // 10 deg SLOW DOWN
-      amount = calcAmountForLerp(elevation, 10);
-      rv = lerp(slow, verySlow, amount);
-    }
-    else if (elevation >180 && elevation<=185) {  // 5 deg SPEED UP
+    if (elevation >=0 && elevation <5) {   // 10 deg, SPEED UP
       amount = calcAmountForLerp(elevation, 5);
       rv = lerp(verySlow, slow, amount);
     }
-    else if (elevation >185 && elevation<=210) {  // 35 deg SPEED UP
-      amount = calcAmountForLerp(elevation, 35);
+    else if (elevation >=5 && elevation <10) { // 20 deg SPEED UP
+      amount = calcAmountForLerp(elevation, 5);
       rv = lerp(slow, mid, amount);
     }
-    else if (elevation >210 && elevation <=340) {
-      amount = calcAmountForLerp(elevation, 50);    // 50 deg STAY THE SAME
-      rv = mid;
+    else if (elevation >=10 && elevation<20) {  // 60 deg SPEED UP
+      amount = calcAmountForLerp(elevation, 10);
+      rv = lerp(mid, fast, amount);
     }
-    else if (elevation >340 && elevation<=350) {  // 60 deg SLOW DOWN
+    else if (elevation >=15 && elevation<150) {  // STAY THE SAME
+      rv = fast;
+    }
+    else if (elevation >=150 && elevation<160) { // 60 deg SLOW DOWN
+      amount = calcAmountForLerp(elevation, 60);
+      rv = lerp(fast, mid, amount);
+    }
+    else if (elevation >=160 && elevation<170) {  // 20 deg SLOW DOWN
       amount = calcAmountForLerp(elevation, 10);
       rv = lerp(mid, slow, amount);
     }
-    if (elevation >350 && elevation <=360) {  // 10 deg SLOW DOWN
+    else if (elevation >=170 && elevation<180) {  // 10 deg SLOW DOWN
       amount = calcAmountForLerp(elevation, 10);
+      rv = lerp(slow, verySlow, amount);
+    }
+    else if (elevation >=180 && elevation<185) {  // 5 deg SPEED UP
+      amount = calcAmountForLerp(elevation, 5);
+      rv = lerp(verySlow, slow, amount);
+    }
+    else if (elevation >=185 && elevation<210) {  // 35 deg SPEED UP
+      amount = calcAmountForLerp(elevation, 35);
+      rv = lerp(slow, mid, amount);
+    }
+    else if (elevation >=210 && elevation <220) {
+      amount = calcAmountForLerp(elevation, 10)   // 10 deg SPEED UP
+      rv = lerp(mid, fast, amount);                                 
+    }
+    else if (elevation >=220 && elevation <330) {
+      rv = fast;                                  // STAY THE SAME
+    }
+    else if (elevation >=330 && elevation <350) {
+      amount = calcAmountForLerp(elevation, 20);  // 10 deg SLOW DOWN
+      rv = lerp(fast, mid, amount);
+    }
+    else if (elevation >=350 && elevation<355) {  //  deg SLOW DOWN
+      amount = calcAmountForLerp(elevation, 5);
+      rv = lerp(mid, slow, amount);
+    }
+    if (elevation >=355 && elevation <360) {  // 5 deg SLOW DOWN
+      amount = calcAmountForLerp(elevation, 5);
       rv = lerp(slow, verySlow, amount);
     }
     
