@@ -428,7 +428,8 @@ async function init() {
   }
 
   const maxIntensity = 4;
-  const minIntensity = 1;
+  const midIntensity = 2;
+  const minIntensity = 0;
   const sunElevationIncConst = .03;
   const sunlightIntensityIncConst = .02;
   let amountWaterColorLerp;    // for water color lerp
@@ -448,35 +449,25 @@ async function init() {
     moon.setFromSphericalCoords(1, moonPhi, moonTheta);   // use spherical coords to place moon in sky
     moonLight.position.copy(moon).multiplyScalar(moonScale);
     moonMesh.position.copy(moon).multiplyScalar(moonScale);
-  
-    /** IMP #1: sunElevactionIncConstant brute force 
-    if ((sunElevation >= 0 && sunElevation < 4) || (sunElevation >= 177 && sunElevation < 183) || (sunElevation > 359)) {
-      sunElevation += (sunElevationIncConst - .021);   // update sun's position slowly at sunrise and sunset
-    } 
-    else {
-      sunElevation += sunElevationIncConst;   // update sun's position normally
-    }
-    */
-
     // IMP #2: sunElevationInc lerp
-
-
-    console.log("sun elevation before sunInc: ", sunElevation);
     sunElevation += sunInc(sunElevation);   // update sun's position 
-    console.log("sun elevation after sunInc: ", sunElevation);
     moonElevation = 180 + sunElevation;     // update moon's position
     amountWaterColorLerp = calcAmountForLerp(sunElevation, 45);    // calc amount for lerp'ing water colors
     amountSunIntenLerp = calcAmountForLerp(sunElevation, 90);
 
     if (sunElevation >= 0 && sunElevation < 90) {    // sunrise - afternoon:
-      if (sunElevation < 2) {   // sun intensity gradual change from 0-1
+      if (sunElevation < 2) {   // sun intensity gradual change from 0-1 (elevation 0-2)
         amountSunIntenLerp = calcAmountForLerp(sunElevation, 2);
-        sunLight.intensity = lerp(0, 1,  amountSunIntenLerp);
+        sunLight.intensity = lerp(minIntensity, midIntensity,  amountSunIntenLerp);
       } 
-      else {                    // sun intensity gradual change from 1-4
-        amountSunIntenLerp = calcAmountForLerp(sunElevation, 90);
-        sunLight.intensity = lerp(minIntensity, maxIntensity,  amountSunIntenLerp);
+      else if (sunElevation >= 2) {                    // sun intensity gradual change from 1-4 (elevation 2-)
+        amountSunIntenLerp = calcAmountForLerp(sunElevation, 88);
+        sunLight.intensity = lerp(midIntensity, maxIntensity,  amountSunIntenLerp);
       }
+      else if (sunElevation >=88 && sunElevation <90) {
+        sunLight.intensity = maxIntensity;
+      }
+      console.log("sunLight intensity: ", sunLight.intensity);
 
       if (sunElevation < 45) {    // sunrise - morning
         if (sunElevation < 20) {
@@ -491,9 +482,18 @@ async function init() {
       }
 
     }
-
     else if (sunElevation >= 90 && sunElevation < 180) {  // afternoon - sunset:  )
-      sunLight.intensity = lerp(maxIntensity, minIntensity,  amountSunIntenLerp);
+      //TODO:
+      //debug intervals s.t. lerping makes sense
+      if (sunElevation <178) {
+        amountSunIntenLerp = calcAmountForLerp(sunElevation, 88);
+        sunLight.intensity = lerp(maxIntensity, midIntensity, amountSunIntenLerp);
+      }
+      else if (sunElevation >=178) {
+        amountSunIntenLerp = calcAmountForLerp(sunElevation, 2);
+        sunLight.intensity = lerp(midIntensity, minIntensity, amountSunIntenLerp);
+      }
+
       if (sunElevation >= 135) {
         lerpWaterColors(waterColors.afternoon, waterColors.sunset, amountWaterColorLerp);  
         if (sunElevation > 170) {
@@ -505,9 +505,6 @@ async function init() {
     }
 
     else if (sunElevation >= 180 && sunElevation < 225) {
-      if (sunLight.intensity > 0) {   // rapidly decrease sunlight's intensity after sunset
-        sunLight.intensity -= .01;
-      }
       lerpWaterColors(waterColors.sunset, waterColors.night, amountWaterColorLerp);
       if (sunElevation < 190) {
         if (sky.material.uniforms['rayleigh'].value > 2) {
@@ -594,7 +591,7 @@ async function init() {
       rv = lerp(slow, verySlow, amount);
     }
     
-    console.log("sunInc: elevation, rv, amount ", elevation, rv, amount);
+    //console.log("sunInc: elevation, rv, amount ", elevation, rv, amount);
     return rv;
   }
 
