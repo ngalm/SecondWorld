@@ -197,7 +197,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 357;   // updated in updateSunAndWate()
+  let sunElevation = 359;   // updated in updateSunAndWater()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -371,8 +371,8 @@ async function init() {
       }
     }
 
-    playSound(morningBirdSound, 358);
-    playSound(aMajChordSound, 358.5);
+    playSound(morningBirdSound, 358.5);
+    playSound(aMajChordSound, 359);
     playSound(fairyTalk1Sound, 0);
     playSound(fairyTalk1Sound, 8);
     playSound(fairyTalk2Sound, 90);
