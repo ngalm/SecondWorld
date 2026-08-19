@@ -197,7 +197,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 359;   // updated in updateSunAndWater()
+  let sunElevation = 120;   // updated in updateSunAndWater()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -428,7 +428,8 @@ async function init() {
   }
 
   const maxIntensity = 4;
-  const minIntensity = 1;
+  const midIntensity = 2;
+  const minIntensity = 0;
   const sunElevationIncConst = .03;
   const sunlightIntensityIncConst = .02;
   let amountWaterColorLerp;    // for water color lerp
@@ -448,34 +449,21 @@ async function init() {
     moon.setFromSphericalCoords(1, moonPhi, moonTheta);   // use spherical coords to place moon in sky
     moonLight.position.copy(moon).multiplyScalar(moonScale);
     moonMesh.position.copy(moon).multiplyScalar(moonScale);
-  
-    /** IMP #1: sunElevactionIncConstant brute force 
-    if ((sunElevation >= 0 && sunElevation < 4) || (sunElevation >= 177 && sunElevation < 183) || (sunElevation > 359)) {
-      sunElevation += (sunElevationIncConst - .021);   // update sun's position slowly at sunrise and sunset
-    } 
-    else {
-      sunElevation += sunElevationIncConst;   // update sun's position normally
-    }
-    */
-
     // IMP #2: sunElevationInc lerp
-
-
-    console.log("sun elevation before sunInc: ", sunElevation);
     sunElevation += sunInc(sunElevation);   // update sun's position 
-    console.log("sun elevation after sunInc: ", sunElevation);
     moonElevation = 180 + sunElevation;     // update moon's position
     amountWaterColorLerp = calcAmountForLerp(sunElevation, 45);    // calc amount for lerp'ing water colors
     amountSunIntenLerp = calcAmountForLerp(sunElevation, 90);
 
+    console.log("sunElevation and sunLight intensity: ", sunElevation, sunLight.intensity);   // debug 
+
     if (sunElevation >= 0 && sunElevation < 90) {    // sunrise - afternoon:
-      if (sunElevation < 2) {   // sun intensity gradual change from 0-1
-        amountSunIntenLerp = calcAmountForLerp(sunElevation, 2);
-        sunLight.intensity = lerp(0, 1,  amountSunIntenLerp);
+      if (sunElevation < 2) {   // sunLight.intensity linear increase from 0-2 deg and 0-2 intensity
+        sunLight.intensity = sunElevation;
       } 
-      else {                    // sun intensity gradual change from 1-4
+      else if (sunElevation >= 2) {                    // sunLight.intensity linear increase from 2-90 deg and 2-4 intensity
         amountSunIntenLerp = calcAmountForLerp(sunElevation, 90);
-        sunLight.intensity = lerp(minIntensity, maxIntensity,  amountSunIntenLerp);
+        sunLight.intensity = lerp(midIntensity, maxIntensity,  amountSunIntenLerp);
       }
 
       if (sunElevation < 45) {    // sunrise - morning
@@ -489,11 +477,17 @@ async function init() {
       else {    //morning - afternoon
         lerpWaterColors(waterColors.morning, waterColors.afternoon, amountWaterColorLerp);
       }
-
     }
 
     else if (sunElevation >= 90 && sunElevation < 180) {  // afternoon - sunset:  )
-      sunLight.intensity = lerp(maxIntensity, minIntensity,  amountSunIntenLerp);
+      if (sunElevation <178) {      // sunLight.intensity linear decrease from 90-178 deg and 4-2 intensity
+        amountSunIntenLerp = calcAmountForLerp(sunElevation, 90);
+        sunLight.intensity = lerp(maxIntensity, midIntensity, amountSunIntenLerp);
+      }
+      else if (sunElevation >=178) {
+        sunLight.intensity = 180 - sunElevation;  // sunLight.intensity linear decrease from 178-180 deg and 2-0 intensity
+      }
+
       if (sunElevation >= 135) {
         lerpWaterColors(waterColors.afternoon, waterColors.sunset, amountWaterColorLerp);  
         if (sunElevation > 170) {
@@ -505,9 +499,6 @@ async function init() {
     }
 
     else if (sunElevation >= 180 && sunElevation < 225) {
-      if (sunLight.intensity > 0) {   // rapidly decrease sunlight's intensity after sunset
-        sunLight.intensity -= .01;
-      }
       lerpWaterColors(waterColors.sunset, waterColors.night, amountWaterColorLerp);
       if (sunElevation < 190) {
         if (sky.material.uniforms['rayleigh'].value > 2) {
@@ -529,11 +520,11 @@ async function init() {
       sunElevation = 0;                          // reset sunElevation 
     }
   }
+
   const verySlow = .0015;
   const slow = .005; 
   const mid = .03;
   const fast = .07;
-
   //given ELEVATION, the sun's elevation (position in deg), returns the value by which to increment the sun's position
   function sunInc(elevation) {
     let amount;
@@ -594,7 +585,7 @@ async function init() {
       rv = lerp(slow, verySlow, amount);
     }
     
-    console.log("sunInc: elevation, rv, amount ", elevation, rv, amount);
+    //console.log("sunInc: elevation, rv, amount ", elevation, rv, amount);
     return rv;
   }
 
