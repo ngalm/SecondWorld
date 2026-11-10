@@ -197,7 +197,7 @@ async function init() {
   // SUN
   // Sun THREE vector
   const sun = new THREE.Vector3();
-  let sunElevation = 120;   // updated in updateSunAndWater()
+  let sunElevation = 355;   // updated in updateSunAndWater()
   const azimuth = 180;
   let phi = THREE.MathUtils.degToRad( 90 - sunElevation);    // updated in updateSunAndWate()
   const theta = THREE.MathUtils.degToRad(azimuth );
@@ -250,6 +250,30 @@ async function init() {
   const ambientLight = new THREE.AmbientLight(0xe49e7b, 1);   // #e49e7b #ff7f50
   scene.add(ambientLight);
 
+  // CLOUD
+  // cloud texture load
+  const cloudTexturePath = './assets/cloud_color.jpeg';
+  const cloudTexture = textureLoader.load(cloudTexturePath);
+  const cloudMaterial = new THREE.MeshStandardMaterial({
+    map: cloudTexture,
+    transparent: true,
+    opacity: 0.2,
+    side: THREE.DoubleSide // Optional: visible from both sides
+  });
+  const cloudGeometry = new THREE.SphereGeometry(
+    460000, 
+    32, 
+    32, 
+    0, 
+    (Math.PI * 2), 
+    0, 
+    (Math.PI / 2) + 1
+  );
+  // create cloud mesh
+  const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+  // add cloud mesh to scene
+  cloudMesh.position.set(0,0,0);
+  scene.add(cloudMesh);
 
   // WATER
   // #f49ac2  #30d5c8 #317ebd  #ff7f50 #000080 #90d5ff
@@ -278,7 +302,7 @@ async function init() {
   //Create THREE plane mesh and place below ocean water plane
   const oceanFloorY = -1;   // change to move ocean floor up or down
   const oceanFloorGeometry = new THREE.PlaneGeometry( 10000, 10000 );
-  const whiteSandColor = 0xf5ebd8;
+  const whiteSandColor = 0xf5ebd8; 
   const oceanFloorMaterial = new THREE.MeshBasicMaterial( { color: whiteSandColor } );
   const oceanFloor = new THREE.Mesh( oceanFloorGeometry, oceanFloorMaterial );
   oceanFloor.rotation.x = - Math.PI / 2;
@@ -362,7 +386,6 @@ async function init() {
     if (moving(currentPos, newPos)) {
       if (!inWater(newPos.y)) {
         if (!(walkingSound.isPlaying)) walkingSound.play(); // play sound (if not already playing) when player is on the sand and moving 
-        //DEBUG: console.log("walking noise");
       }
     }
     else {
@@ -454,8 +477,6 @@ async function init() {
     moonElevation = 180 + sunElevation;     // update moon's position
     amountWaterColorLerp = calcAmountForLerp(sunElevation, 45);    // calc amount for lerp'ing water colors
     amountSunIntenLerp = calcAmountForLerp(sunElevation, 90);
-
-    console.log("sunElevation and sunLight intensity: ", sunElevation, sunLight.intensity);   // debug 
 
     if (sunElevation >= 0 && sunElevation < 90) {    // sunrise - afternoon:
       if (sunElevation < 2) {   // sunLight.intensity linear increase from 0-2 deg and 0-2 intensity
@@ -585,7 +606,6 @@ async function init() {
       rv = lerp(slow, verySlow, amount);
     }
     
-    //console.log("sunInc: elevation, rv, amount ", elevation, rv, amount);
     return rv;
   }
 
@@ -603,7 +623,6 @@ async function init() {
 
   function lerp(a, b, amount) {
     let rv = a + amount * (b - a);
-    console.log("a b : ", a, b);
     return rv
   }
 
