@@ -222,26 +222,15 @@ async function init() {
   // cloud texture load
   const cloudTexturePath = './assets/cloud_color.jpeg';
   const cloudTexture = textureLoader.load(cloudTexturePath);
-  const cloudMaterial = new THREE.MeshStandardMaterial({
-    map: cloudTexture,
-    transparent: true,
-    opacity: 0.2,
-    side: THREE.DoubleSide // Optional: visible from both sides
+  const cloudMaterial = new THREE.SpriteMaterial({
+    map: cloudTexture
   });
-  const cloudGeometry = new THREE.SphereGeometry(
-    460000, 
-    32, 
-    32, 
-    0, 
-    (Math.PI * 2), 
-    0, 
-    (Math.PI / 2) + 1
-  );
-  // create cloud mesh
-  const cloudMesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
-  // add cloud mesh to scene
-  cloudMesh.position.set(0,0,0);
-  scene.add(cloudMesh);
+  // create cloud sprite
+  const cloudSprite = new THREE.Sprite(cloudMaterial);
+  cloudSprite.scale.set(1000, 500, 1000);
+  cloudSprite.position.set(0, 0, 100);
+  // add cloud sprite to scene
+  //scene.add(cloudSprite);
 
   // MOON
   // Moon THREE vector
